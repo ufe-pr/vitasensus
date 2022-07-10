@@ -1,9 +1,15 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { TranslateIcon, SunIcon, MoonIcon, DesktopComputerIcon } from '@heroicons/react/outline';
+import {
+	TranslateIcon,
+	SunIcon,
+	MoonIcon,
+	DesktopComputerIcon,
+	PlusIcon,
+} from '@heroicons/react/outline';
 import A from '../components/A';
 import { NetworkTypes, State } from '../utils/types';
 import { prefersDarkTheme } from '../utils/misc';
-import { connect } from '../utils/globalContext';
+import { connect, setStateType } from '../utils/globalContext';
 import ViteConnectButton from './ViteConnectButton';
 import ViteLogo from '../assets/ViteLogo';
 import { PROD } from '../utils/constants';
@@ -22,8 +28,6 @@ const PageContainer = ({
 	setState,
 	children,
 }: Props) => {
-	const [theme, themeSet] = useState(localStorage.theme);
-
 	useEffect(() => {
 		import(`../i18n/${languageType}.ts`).then((translation) => {
 			setState({ i18n: translation.default });
@@ -44,146 +48,237 @@ const PageContainer = ({
 		// ['English', 'en'],
 	];
 
-	const themes: [typeof SunIcon, string][] = [
-		[SunIcon, i18n?.light],
-		[MoonIcon, i18n?.dark],
-		[DesktopComputerIcon, i18n?.system],
-	];
-
 	return !i18n ? null : (
-		<div className="h-0 min-h-screen relative flex flex-col">
-			<header className="fx px-2 h-12 justify-between top-[1px] w-full fixed z-50">
-				<div className="fx gap-3">
-					<A to="/" className="px-1 h-8">
-						<ViteLogo className="text-skin-base h-7" />
+		<div className="flex w-screen overflow-x-hidden relative">
+			<Sidebar />
+			<div className="w-screen md:w-auto h-0 min-h-screen grow shrink-0 relative flex flex-col overflow-y-auto">
+				<header className="fx bg-skin-base border-b-2 border-y-skin-alt px-4 lg:px-8 h-20 justify-between top-0 w-full sticky shrink-0 z-50">
+					<div className="fx gap-3">
+						<A to="/" className="px-1 h-8 text-xl font-bold">
+							Vitasensus
+						</A>
+					</div>
+					<div className="fx gap-3 relative">
+						<NetworkSelectionToggle {...{ i18n, networkType, networkTypes, setState }} />
+						<ViteConnectButton />
+						<LanguageToggleButton languages={languages} setState={setState} />
+						<ThemeToggleButton i18n={i18n} />
+					</div>
+				</header>
+				<main
+					className={`flex-1 w-full max-w-5xl mx-auto ${noPadding ? '' : 'p-4 md:p-8 lg:p-16'}`}
+				>
+					{children}
+				</main>
+				<div className="fx justify-center gap-2 mx-4 my-3 text-skin-muted">
+					<A href="https://twitter.com/vitelabs" className="brightness-button">
+						Twitter
 					</A>
-					<A to="/app" className="text-skin-secondary">
-						{i18n.app}
+					<A href="https://github.com/vitelabs/vite-express" className="brightness-button">
+						GitHub
 					</A>
-					<A to="/history" className="text-skin-secondary">
-						{i18n.history}
+					<A href="https://discord.gg/AEnScAQA" className="brightness-button">
+						Discord
 					</A>
 				</div>
-				<div className="fx gap-3 relative">
-					<DropdownButton
-						buttonJsx={<p className="text-skin-secondary">{i18n[networkType]}</p>}
-						dropdownJsx={
-							<>
-								{networkTypes.map(([networkType, label]) => {
-									const active = (localStorage.networkType || 'testnet') === networkType;
-									return (
-										<button
-											key={networkType}
-											className={`fx font-semibold px-2 w-full h-7 bg-skin-foreground brightness-button ${
-												active ? 'text-skin-highlight' : ''
-											}`}
-											onMouseDown={(e) => e.preventDefault()}
-											onClick={() => {
-												localStorage.networkType = networkType;
-												setState({ networkType });
-											}}
-										>
-											{label}
-										</button>
-									);
-								})}
-							</>
-						}
-					/>
-					<ViteConnectButton />
-					<DropdownButton
-						buttonJsx={
-							<div className="w-8 h-8 xy">
-								<TranslateIcon className="text-skin-muted w-7 h-7" />
-							</div>
-						}
-						dropdownJsx={
-							<>
-								{languages.map(([language, shorthand]) => {
-									const active =
-										localStorage.languageType === shorthand ||
-										(!localStorage.languageType && shorthand === 'en');
-									return (
-										<button
-											key={language}
-											className={`fx px-2 w-full h-7 bg-skin-foreground brightness-button ${
-												active ? 'text-skin-highlight' : ''
-											}`}
-											onMouseDown={(e) => e.preventDefault()}
-											onClick={() => {
-												localStorage.languageType = shorthand;
-												setState({ languageType: shorthand });
-											}}
-										>
-											{language}
-										</button>
-									);
-								})}
-							</>
-						}
-					/>
-					<DropdownButton
-						buttonJsx={
-							<div className="w-8 h-8 xy">
-								<div
-									className={`w-7 h-7 ${
-										theme === 'system' ? 'text-skin-muted' : 'text-skin-highlight'
-									}`}
-								>
-									<SunIcon className="block dark:hidden" />
-									<MoonIcon className="hidden dark:block" />
-								</div>
-							</div>
-						}
-						dropdownJsx={
-							<>
-								{themes.map(([Icon, label]) => {
-									const active = localStorage.theme === label;
-									return (
-										<button
-											key={label}
-											className="fx px-2 py-0.5 h-7 gap-2 w-full bg-skin-foreground brightness-button"
-											onMouseDown={(e) => e.preventDefault()}
-											onClick={() => {
-												localStorage.theme = label;
-												themeSet(label);
-												if (label === 'light' || !prefersDarkTheme()) {
-													document.documentElement.classList.remove('dark');
-												} else if (label === 'dark' || prefersDarkTheme()) {
-													document.documentElement.classList.add('dark');
-												}
-											}}
-										>
-											<Icon
-												className={`h-full ${
-													active ? 'text-skin-highlight' : 'text-skin-secondary'
-												}`}
-											/>
-											<p className={`font-semibold ${active ? 'text-skin-highlight' : ''}`}>
-												{label[0].toUpperCase() + label.substring(1)}
-											</p>
-										</button>
-									);
-								})}
-							</>
-						}
-					/>
-				</div>
-			</header>
-			<main className={`flex-1 ${noPadding ? '' : 'px-4 pt-14'}`}>{children}</main>
-			<div className="fx justify-end gap-2 mx-4 my-3 text-skin-muted text-sm">
-				<A href="https://twitter.com/vitelabs" className="brightness-button">
-					Twitter
-				</A>
-				<A href="https://github.com/vitelabs/vite-express" className="brightness-button">
-					GitHub
-				</A>
-				<A href="https://discord.gg/AEnScAQA" className="brightness-button">
-					Discord
-				</A>
 			</div>
 		</div>
 	);
 };
 
 export default connect(PageContainer);
+
+type SidebarItemProps = {
+	avatar: string | ReactNode;
+	label: string;
+	href: string;
+	isSelected?: boolean;
+	className?: string;
+};
+
+function SidebarItem({ avatar, label, href, className }: SidebarItemProps) {
+	return (
+		<div className="h-11 w-full xy">
+			<a href={href}>
+				<button
+					className={
+						(className || '') +
+						' h-11 w-11 xy rounded-full border dark:border-skin-foreground border-skin-text-muted hover:border-skin-text overflow-hidden duration-200 '
+					}
+				>
+					{typeof avatar === 'string' ? (
+						<img className="h-full object-cover" src={avatar} alt={label} />
+					) : (
+						avatar
+					)}
+				</button>
+			</a>
+		</div>
+	);
+}
+
+function Sidebar({ isOpen }: { isOpen?: boolean }) {
+	return (
+		<div
+			className={
+				(isOpen ? 'w-16' : 'w-0') +
+				' md:w-20 h-screen grow-0 shrink-0 top-0 sticky border-r border-r-skin-alt py-8'
+			}
+		>
+			<ul className="flex flex-col gap-y-6">
+				<li>
+					<SidebarItem avatar={<ViteLogo />} label="Home" href="#" className="border-none" />
+				</li>
+				<li>
+					<SidebarItem
+						avatar={<PlusIcon className="h-5" />}
+						label="Create Organization"
+						href="/create"
+					/>
+				</li>
+				<span className="w-4/5 h-0.5 bg-skin-alt mx-auto my-2"></span>
+				<li>
+					<SidebarItem avatar="/favicon.png" label="Home" href="#" />
+				</li>
+				<li>
+					<SidebarItem avatar="/favicon.png" label="Home" href="#" />
+				</li>
+			</ul>
+		</div>
+	);
+}
+
+function NetworkSelectionToggle({
+	i18n,
+	networkType,
+	networkTypes,
+	setState,
+}: {
+	i18n: any;
+	networkType: string;
+	networkTypes: [NetworkTypes, string][];
+	setState: setStateType;
+}) {
+	return (
+		<DropdownButton
+			buttonJsx={<p className="text-skin-secondary">{i18n[networkType]}</p>}
+			dropdownJsx={
+				<>
+					{networkTypes.map(([networkType, label]) => {
+						const active = (localStorage.networkType || 'testnet') === networkType;
+						return (
+							<button
+								key={networkType}
+								className={`fx font-semibold px-2 w-full h-7 bg-skin-foreground brightness-button ${
+									active ? 'text-skin-highlight' : ''
+								}`}
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={() => {
+									localStorage.networkType = networkType;
+									setState({ networkType });
+								}}
+							>
+								{label}
+							</button>
+						);
+					})}
+				</>
+			}
+		/>
+	);
+}
+
+function LanguageToggleButton({
+	languages,
+	setState,
+}: {
+	languages: string[][];
+	setState: setStateType;
+}) {
+	return (
+		<DropdownButton
+			buttonJsx={
+				<div className="w-8 h-8 xy">
+					<TranslateIcon className="text-skin-muted w-7 h-7" />
+				</div>
+			}
+			dropdownJsx={
+				<>
+					{languages.map(([language, shorthand]) => {
+						const active =
+							localStorage.languageType === shorthand ||
+							(!localStorage.languageType && shorthand === 'en');
+						return (
+							<button
+								key={language}
+								className={`fx px-2 w-full h-7 bg-skin-foreground brightness-button ${
+									active ? 'text-skin-highlight' : ''
+								}`}
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={() => {
+									localStorage.languageType = shorthand;
+									setState({ languageType: shorthand });
+								}}
+							>
+								{language}
+							</button>
+						);
+					})}
+				</>
+			}
+		/>
+	);
+}
+
+function ThemeToggleButton({ i18n }: { i18n: any }) {
+	const [theme, themeSet] = useState(localStorage.theme);
+	const themes: [typeof SunIcon, string][] = [
+		[SunIcon, i18n?.light],
+		[MoonIcon, i18n?.dark],
+		[DesktopComputerIcon, i18n?.system],
+	];
+	return (
+		<DropdownButton
+			buttonJsx={
+				<div className="w-8 h-8 xy">
+					<div
+						className={`w-7 h-7 ${theme === 'system' ? 'text-skin-muted' : 'text-skin-highlight'}`}
+					>
+						<SunIcon className="block dark:hidden" />
+						<MoonIcon className="hidden dark:block" />
+					</div>
+				</div>
+			}
+			dropdownJsx={
+				<>
+					{themes.map(([Icon, label]) => {
+						const active = localStorage.theme === label;
+						return (
+							<button
+								key={label}
+								className="fx px-2 py-0.5 h-7 gap-2 w-full bg-skin-foreground brightness-button"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={() => {
+									localStorage.theme = label;
+									themeSet(label);
+									if (label === 'light' || !prefersDarkTheme()) {
+										document.documentElement.classList.remove('dark');
+									} else if (label === 'dark' || prefersDarkTheme()) {
+										document.documentElement.classList.add('dark');
+									}
+								}}
+							>
+								<Icon
+									className={`h-full ${active ? 'text-skin-highlight' : 'text-skin-secondary'}`}
+								/>
+								<p className={`font-semibold ${active ? 'text-skin-highlight' : ''}`}>
+									{label[0].toUpperCase() + label.substring(1)}
+								</p>
+							</button>
+						);
+					})}
+				</>
+			}
+		/>
+	);
+}

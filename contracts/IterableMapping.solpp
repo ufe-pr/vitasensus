@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma soliditypp ^0.8.0;
+library IterableMapping {
+    // Iterable mapping from address to uint;
+    struct Map {
+        address[] keys;
+        mapping(address => uint) values;
+        mapping(address => uint) indexOf;
+        mapping(address => bool) inserted;
+    }
+
+    function get(Map storage self, address key) internal view returns (uint) {
+        return self.values[key];
+    }
+
+    function getKeyAtIndex(Map storage self, uint index) internal view returns (address) {
+        return self.keys[index];
+    }
+
+    function size(Map storage self) internal view returns (uint) {
+        return self.keys.length;
+    }
+
+    function set(
+        Map storage self,
+        address key,
+        uint val
+    ) internal {
+        if (self.inserted[key]) {
+            self.values[key] = val;
+        } else {
+            self.inserted[key] = true;
+            self.values[key] = val;
+            self.indexOf[key] = self.keys.length;
+            self.keys.push(key);
+        }
+    }
+
+    function remove(Map storage self, address key) internal {
+        if (!self.inserted[key]) {
+            return;
+        }
+
+        delete self.inserted[key];
+        delete self.values[key];
+
+        uint index = self.indexOf[key];
+        uint lastIndex = self.keys.length - 1;
+        address lastKey = self.keys[lastIndex];
+
+        self.indexOf[lastKey] = index;
+        delete self.indexOf[key];
+
+        self.keys[index] = lastKey;
+        self.keys.pop();
+    }
+}

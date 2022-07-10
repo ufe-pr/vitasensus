@@ -1,5 +1,9 @@
+import { formatBytes32String, parseBytes32String } from '@ethersproject/strings';
+
 export const shortenString = (str: string, startCount = 8, endCount = 5) =>
-	str.slice(0, startCount) + '...' + str.slice(-endCount);
+	str.length < startCount
+		? str
+		: str.slice(0, startCount) + '...' + str.slice(str.length - endCount);
 export const shortenAddress = (address: string) => shortenString(address, 8, 5);
 export const shortenHash = (hash: string) => shortenString(hash, 5, 5);
 export const shortenTti = (hash: string) => shortenString(hash, 7, 5);
@@ -76,3 +80,11 @@ export const formatDate = (date: number | Date, verbose?: boolean, utc?: boolean
 	}
 	return `${year}-${month + 1}-${day} ${hour}:${minute}:${second}`;
 };
+
+export function decodeBytes32ToString(value: string): string {
+	return parseBytes32String(value.startsWith('0x') ? value : '0x' + value);
+}
+
+export function encodeStringToBytes32(value: string): string {
+	return formatBytes32String(value);
+}

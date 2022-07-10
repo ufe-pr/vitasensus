@@ -15,9 +15,13 @@ export type State = {
 		tokenId?: string,
 		amount?: string
 	) => Promise<object>;
+	queryContract: (
+		contract: typeof CafeContract,
+		methodName: string,
+		params: any[]
+	) => Promise<object>;
 	scanEvents: (
-		abi: any[],
-		address: string,
+		contract: typeof CafeContract,
 		fromHeight: string,
 		eventName: string
 	) => Promise<object>;

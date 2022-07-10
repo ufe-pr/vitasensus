@@ -35,6 +35,8 @@ module.exports = {
 			borderColor: {
 				skin: {
 					foreground: 'var(--bg-foreground-color)',
+					text: 'var(--text-primary-color)',
+					'text-secondary': 'var(--text-secondary-color)',
 				},
 			},
 		},

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import WS_RPC from '@vite/vitejs-ws';
-import { accountBlock, ViteAPI } from '@vite/vitejs';
-import Landing from '../pages/Landing';
-import AppHome from '../pages/AppHome';
+// @ts-ignore
+import HTTP_RPC from '@vite/vitejs-http';
+import { accountBlock, ViteAPI, abi } from '@vite/vitejs';
 import { connect } from '../utils/globalContext';
 import { State, ViteBalanceInfo } from '../utils/types';
 import Toast from './Toast';
@@ -11,7 +11,13 @@ import { VCSessionKey } from '../utils/viteConnect';
 import { PROD } from '../utils/constants';
 import PageContainer from './PageContainer';
 import CafeContract from '../contracts/Cafe';
-import History from '../pages/History';
+import Spaces from '../pages/Spaces';
+import SingleSpace from '../pages/SingleSpace';
+import ProposalsList from '../components/ProposalsList';
+import SingleProposal from '../pages/SingleProposal';
+import CreateSpace from '../pages/CreateSpace';
+import SpaceCreateProposal from '../components/SpaceCreateProposal';
+import { getPastEvents } from '../utils/viteScripts';
 
 const providerWsURLs = {
 	...(PROD ? {} : { localnet: 'ws://localhost:23457' }),
@@ -26,15 +32,15 @@ type Props = State;
 const Router = ({ setState, vcInstance, networkType }: Props) => {
 	const connectedAccount = useMemo(() => vcInstance?.accounts[0], [vcInstance]);
 
-	const rpc = useMemo(
-		() =>
-			new WS_RPC(
-				networkType === 'mainnet' ? providerWsURLs.mainnet : providerWsURLs.testnet,
-				providerTimeout,
-				providerOptions
-			),
-		[networkType]
-	);
+	const rpc = useMemo(() => {
+		const url =
+			providerWsURLs[networkType] ||
+			(networkType === 'mainnet' ? providerWsURLs.mainnet : providerWsURLs.testnet);
+
+		return url.startsWith('ws')
+			? new WS_RPC(url, providerTimeout, providerOptions)
+			: new HTTP_RPC(url, providerTimeout, providerOptions);
+	}, [networkType]);
 
 	const viteApi = useMemo(() => {
 		return new ViteAPI(rpc, () => {
@@ -127,13 +133,94 @@ const Router = ({ setState, vcInstance, networkType }: Props) => {
 		setState({ callContract });
 	}, [setState, callContract]);
 
+	const queryContract = useCallback(
+		async (contract: typeof CafeContract, methodName: string, params: any[] = []) => {
+			if (!viteApi) {
+				return;
+			}
+			const methodAbi: any = contract.abi.find(
+				(x: any) => x.name === methodName && x.type === 'function'
+			);
+			if (!methodAbi) {
+				throw new Error(`method not found: ${methodName}`);
+			}
+			const toAddress = contract.address[networkType];
+			if (!toAddress) {
+				throw new Error(`${networkType} contract address not found`);
+			}
+			let data = abi.encodeFunctionCall(methodAbi, params);
+			let dataBase64 = Buffer.from(data, 'hex').toString('base64');
+
+			let result = await viteApi.request('contract_query', {
+				address: toAddress,
+				data: dataBase64,
+			});
+			console.log("queryContract result: ", result);
+			
+
+			// parse result
+			if (result) {
+				let resultBytes = Buffer.from(result, 'base64').toString('hex');
+				let outputs = [];
+				for (let i = 0; i < methodAbi.outputs.length; i++) {
+					outputs.push(methodAbi.outputs[i].type);
+				}
+				return abi.decodeParameters(outputs, resultBytes);
+			}
+
+			throw new Error('Query failed');
+		},
+		[networkType, viteApi]
+	);
+
+	useEffect(() => {
+		setState({ queryContract });
+	}, [setState, queryContract]);
+
+	const scanEvents = useCallback(
+		(contract: typeof CafeContract, fromHeight: string, eventName: string) => {
+			if (!viteApi) {
+				return;
+			}
+			const contractAbi = contract.abi;
+			const addr = contract.address[networkType];
+			return getPastEvents(viteApi, addr, contractAbi, eventName, {
+				fromHeight: Number.parseInt(fromHeight),
+			});
+		},
+		[networkType, viteApi]
+	);
+
+	useEffect(() => {
+		setState({ scanEvents });
+	}, [setState, scanEvents]);
+
 	return (
 		<BrowserRouter>
 			<PageContainer>
 				<Routes>
-					<Route path="/" element={<Landing />} />
-					<Route path="/app" element={<AppHome />} />
-					<Route path="/history" element={<History />} />
+					<Route path="/" element={<Spaces />} />
+					<Route path="/create" element={<CreateSpace />} />
+					<Route path="/space/:spaceId/">
+						<Route
+							index
+							element={
+								<SingleSpace>
+									<ProposalsList />
+								</SingleSpace>
+							}
+						/>
+						<Route path="proposals/:proposalId" element={<SingleProposal />} />
+						<Route
+							path="create"
+							element={
+								<SingleSpace>
+									<SpaceCreateProposal />
+								</SingleSpace>
+							}
+						/>
+					</Route>
+
 					<Route path="*" element={<Navigate to="/" />} />
 				</Routes>
 			</PageContainer>

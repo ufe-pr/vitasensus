@@ -1,0 +1,417 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma soliditypp >=0.8.0;
+
+import './IterableMapping.solpp';
+
+contract Vitasensus {
+	using IterableMapping for IterableMapping.Map;
+
+	// Event declarations
+	event SpaceCreated(
+		uint256 indexed id,
+		vitetoken indexed token,
+		bytes32 indexed name,
+		bytes32 avatar,
+		string description
+	);
+	event SpaceNameUpdated(uint256 indexed id, bytes32 from, bytes32 to);
+	event SpaceDescriptionUpdated(uint256 indexed id, bytes32 from, bytes32 to);
+	event SpaceAvatarUpdated(uint256 indexed id, bytes32 from, bytes32 to);
+	event SpaceTokenUpdated(uint256 indexed id, vitetoken indexed from, vitetoken indexed to);
+	event SpaceWebsiteUpdated(uint256 indexed id, bytes32 from, bytes32 to);
+	event SpaceAdminAdded(uint256 indexed id, address admin);
+	event SpaceAdminRemoved(uint256 indexed id, address admin);
+	event SpaceOwnershipTransferred(uint256 indexed id, address indexed from, address indexed to);
+
+	event JoinedSpace(uint256 indexed spaceId, address indexed user);
+	event LeftSpace(uint256 indexed spaceId, address indexed user);
+
+	event ProposalCreated(
+		uint256 indexed id,
+		uint256 indexed spaceId,
+		string title,
+		uint256 timestamp,
+		uint256 choiceCount,
+		string description
+	);
+	event ProposalVoted(uint256 indexed proposalId, uint256 indexed spaceId, address indexed voter);
+	event ProposalExecuted(uint256 indexed proposalId, uint256 indexed spaceId, uint256 choiceId);
+	event TransferTransactionExecuted(
+		address indexed sender,
+		address indexed receiver,
+		uint256 indexed proposalId,
+		uint256 spaceId,
+		uint256 amount
+	);
+	event ContractInteractionTransactionExecuted(
+		address indexed contractAddress,
+		bytes32 data,
+		uint256 indexed proposalId,
+		uint256 spaceId,
+		uint256 value
+	);
+
+	// Enum declarations
+
+	enum ProposalState {
+		Active,
+		Closed
+	}
+	enum TransactionType {
+		FundsTransfer,
+		ContractInteraction
+	}
+
+	// Struct declarations
+
+	struct Space {
+		bytes32 name;
+		bytes32 avatar;
+		bytes32 website;
+		string description;
+		vitetoken token;
+	}
+
+	struct Proposal {
+		string body;
+		string title;
+		uint64 startTime;
+		uint64 endTime;
+		bytes32[] choices;
+		address[] choicesExecutors;
+		bytes32[] choicesData;
+		uint256[] votes;
+		ProposalState state;
+	}
+
+	struct Vote {
+		address voter;
+		uint256[] votes;
+	}
+
+	// State
+	Space[] private _spaces;
+	mapping(uint256 => Proposal[]) private _spacesProposals;
+
+	mapping(uint256 => IterableMapping.Map) private _spacesMembers;
+	mapping(uint256 => IterableMapping.Map) private _spacesAdmins;
+	mapping(uint256 => address) private _spacesOwners;
+
+	mapping(uint256 => mapping(uint256 => mapping(address => Vote))) _spacesProposalsVotes;
+    mapping(uint256 => mapping(uint256 => address[])) _spacesProposalsVoters;
+
+	// Modifier declarations
+
+	// Access modifiers
+	modifier requireSpaceOwner(uint256 spaceId) {
+		require(isSpaceOwner(spaceId, msg.sender));
+		_;
+	}
+
+	modifier requireSpaceAdmin(uint256 spaceId) {
+		require(isSpaceAdmin(spaceId, msg.sender));
+		_;
+	}
+
+	modifier requireSpaceMember(uint256 spaceId) {
+		require(isSpaceMember(spaceId, msg.sender));
+		_;
+	}
+
+	modifier requireNotSpaceMember(uint256 spaceId) {
+		require(!isSpaceMember(spaceId, msg.sender));
+		_;
+	}
+
+	modifier requireProposalActive(uint256 spaceId, uint256 proposalId) {
+		require(isProposalActive(spaceId, proposalId));
+		_;
+	}
+
+	modifier requireProposalClosed(uint256 spaceId, uint256 proposalId) {
+		require(isProposalClosed(spaceId, proposalId));
+		_;
+	}
+
+	modifier requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) {
+		require(!isProposalExecuted(spaceId, proposalId));
+		_;
+	}
+
+	modifier requireSpaceToken(uint256 spaceId) {
+		require(msg.token == getSpaceToken(spaceId));
+		_;
+	}
+
+	// Function declarations
+
+	function sum(uint256[] memory xs) internal pure returns (uint256) {
+		uint256 sum_ = 0;
+		for (uint256 index = 0; index < xs.length; index++) {
+			sum_ += xs[index];
+		}
+
+		return sum_;
+	}
+
+	function isSpaceMember(uint256 spaceId, address user) public view returns (bool) {
+		return _spacesMembers[spaceId].get(user) == 1;
+	}
+
+	function isSpaceAdmin(uint256 spaceId, address user) public view returns (bool) {
+		return _spacesAdmins[spaceId].get(user) == 1;
+	}
+
+	function isSpaceOwner(uint256 spaceId, address user) public view returns (bool) {
+		return _spacesOwners[spaceId] == user;
+	}
+
+	function isProposalActive(uint256 spaceId, uint256 proposalId) public view returns (bool) {
+		return _getProposal(spaceId, proposalId).startTime < block.timestamp;
+	}
+
+	function isProposalClosed(uint256 spaceId, uint256 proposalId) public view returns (bool) {
+		return _getProposal(spaceId, proposalId).endTime < block.timestamp;
+	}
+
+	function isProposalExecuted(uint256 spaceId, uint256 proposalId) public view returns (bool) {
+		return _getProposal(spaceId, proposalId).state == ProposalState.Closed;
+	}
+
+	function getSpaceToken(uint256 spaceId) public view returns (vitetoken) {
+		return _spaces[spaceId].token;
+	}
+
+	function _getProposal(uint256 spaceId, uint256 proposalId)
+		internal
+		view
+		returns (Proposal storage)
+	{
+		return _spacesProposals[spaceId][proposalId];
+	}
+
+	// Proposal execution
+
+	function _getWinningChoice(uint256 spaceId, uint256 proposalId)
+		internal
+		view
+		returns (uint256)
+	{
+		Proposal storage proposal = _getProposal(spaceId, proposalId);
+		(uint256 maxVal, uint256 maxIndex) = (0, 0);
+		for (uint256 index = 0; index < proposal.votes.length; index++) {
+			if (proposal.votes[index] > maxVal) {
+				maxVal = proposal.votes[index];
+				maxIndex = index;
+			}
+		}
+		return maxIndex;
+	}
+
+
+	function _executeProposal(
+		uint256 spaceId,
+		uint256 proposalId,
+		uint256 winningChoiceIndex
+	) internal {
+		Proposal storage proposal = _getProposal(spaceId, proposalId);
+		require(winningChoiceIndex < proposal.choices.length);
+		// TODO: call the contract with the data
+		emit ProposalExecuted(proposalId, spaceId, winningChoiceIndex);
+	}
+
+	function executeProposal(uint256 spaceId, uint256 proposalId)
+		public
+		requireProposalClosed(spaceId, proposalId)
+		requireProposalNotExecuted(spaceId, proposalId)
+	{
+		uint256 winningChoiceIndex = _getWinningChoice(spaceId, proposalId);
+		_executeProposal(spaceId, proposalId, winningChoiceIndex);
+	}
+
+	// Proposal voting
+
+	function voteOnProposal(
+		uint256 spaceId,
+		uint256 proposalId,
+		uint256[] memory votes
+	)
+		public
+		payable
+		requireSpaceToken(spaceId)
+		requireSpaceMember(spaceId)
+		requireProposalActive(spaceId, proposalId)
+	{
+		require(msg.value > sum(votes));
+
+		Proposal storage proposal = _getProposal(spaceId, proposalId);
+		require(votes.length == proposal.choices.length);
+
+		Vote storage vote = _spacesProposalsVotes[spaceId][proposalId][msg.sender];
+		for (uint256 index = 0; index < votes.length; index++) {
+			vote.votes[index] += votes[index];
+			proposal.votes[index] += votes[index];
+		}
+		emit ProposalVoted(proposalId, spaceId, msg.sender);
+	}
+
+	function txTypeFromUint8(uint8 txType) internal pure returns (TransactionType) {
+		if (txType == 0) {
+			return TransactionType.FundsTransfer;
+		} else {
+			return TransactionType.ContractInteraction;
+		}
+	}
+
+	function createProposal(
+		uint256 spaceId,
+		string memory title,
+		string memory description,
+		uint256 startTime,
+		uint256 endTime,
+		bytes32[] memory choices,
+		address[] memory choicesExecutors,
+		bytes32[] memory choicesData
+	) public /* requireSpaceMember(spaceId) */ {
+		require(startTime < endTime);
+		require(startTime >= block.timestamp);
+		require(choices.length > 0);
+		require(spaceId < _spaces.length);
+
+		uint256 proposalId = _spacesProposals[spaceId].length;
+		_spacesProposals[spaceId].push();
+		Proposal storage proposal = _getProposal(spaceId, proposalId);
+		proposal.title = title;
+		proposal.body = description;
+		proposal.startTime = uint64(startTime);
+		proposal.endTime = uint64(endTime);
+		proposal.choices = choices;
+		proposal.choicesExecutors = choicesExecutors;
+		proposal.choicesData = choicesData;
+		
+		emit ProposalCreated(proposalId, spaceId, proposal.title, block.timestamp, choices.length, proposal.body);
+
+	}
+
+    function joinSpace(uint256 spaceId) public requireNotSpaceMember(spaceId) {
+        _spacesMembers[spaceId].set(msg.sender, 1);
+        emit JoinedSpace(spaceId, msg.sender);
+    }
+
+    function leaveSpace(uint256 spaceId) public requireSpaceMember(spaceId) {
+        _spacesMembers[spaceId].remove(msg.sender);
+        emit LeftSpace(spaceId, msg.sender);
+    }
+
+
+    // transfer ownership
+    function transferSpaceOwnership(uint256 spaceId, address newOwner) public requireSpaceOwner(spaceId) {
+        _spacesOwners[spaceId] = newOwner;
+        emit SpaceOwnershipTransferred(spaceId, msg.sender , newOwner);
+    }
+
+    // add space admin
+    function addSpaceAdmin(uint256 spaceId, address newAdmin) public requireSpaceOwner(spaceId) {
+        _spacesAdmins[spaceId].set(newAdmin, 1);
+        emit SpaceAdminAdded(spaceId, newAdmin);
+    }
+
+    // remove space admin
+    function removeSpaceAdmin(uint256 spaceId, address admin) public requireSpaceOwner(spaceId) {
+        _spacesAdmins[spaceId].remove(admin);
+        emit SpaceAdminRemoved(spaceId, admin);
+    }
+
+    // Create a space
+    function createSpace(bytes32 name, string memory description, vitetoken spaceToken, bytes32 avatar, bytes32 website) public {
+        uint256 spaceId = _spaces.length;
+        Space memory space;
+        space.name = name;
+        space.description = description;
+        space.token = spaceToken;
+        space.avatar = avatar;
+        space.website = website;
+
+        _spaces.push(space);
+        emit SpaceCreated(spaceId, spaceToken, name, avatar, description);
+    }
+
+    // Item getters
+    // TODO: Make paginated
+
+
+    function getSpaceMembers(uint256 spaceId, uint skip, uint limit) public view returns (address[] memory members_) {
+		for (uint256 index = skip; index < _spacesMembers[spaceId].size() && index < (skip + limit); index++) {
+			members_[index - skip] = (_spacesMembers[spaceId].keys[index]);
+		}
+    }
+
+    function getSpaceAdmins(uint256 spaceId) public view returns (address[] memory) {
+        return _spacesAdmins[spaceId].keys;
+    }
+
+    // get space owner
+    function getSpaceOwner(uint256 spaceId) public view returns (address) {
+        return _spacesOwners[spaceId];
+    }
+
+    // get space
+    function getSpaceExternal(uint256 spaceId) public view returns (bytes32 name, string memory description, vitetoken token, bytes32 avatar, bytes32 website, uint256 memberCounts) {
+        Space storage space = _spaces[spaceId];
+        return (space.name, space.description, space.token, space.avatar, space.website, _spacesMembers[spaceId].size());
+    }
+
+    // get spaces
+    function getSpaces(uint256 skip, uint limit) public view returns (bytes32[] memory names, vitetoken[] memory tokens, bytes32[] memory avatars, bytes32[] memory websites, uint256[] memory memberCounts) {
+		if (skip < _spaces.length) {
+			uint256 length = (_spaces.length - skip) > limit ? limit : _spaces.length - skip;
+			names = new bytes32[](length);
+			tokens = new vitetoken[](length);
+			avatars = new bytes32[](length);
+			websites = new bytes32[](length);
+			memberCounts = new uint256[](length);
+			
+			for (uint256 index = skip; index < _spaces.length && index < (skip + limit); index++) {
+				names[index - skip] = _spaces[index].name;
+				tokens[index - skip ] = _spaces[index].token;
+				avatars[index  - skip] = _spaces[index].avatar;
+				websites[index - skip ] = _spaces[index].website;
+				memberCounts[index - skip] = _spacesMembers[index].size();
+			}
+		}
+    }
+
+    // get space proposals
+    function getSpaceProposals(uint256 spaceId, uint256 skip, uint256 limit) public view returns (uint256[] memory proposalIds, string[] memory titles, string[] memory descriptions, uint256[] memory startTimes, uint256[] memory endTimes, uint256[] memory choicesCount) {
+        for (uint256 index = skip; index < _spacesProposals[spaceId].length && index < (skip + limit); index++) {
+            proposalIds[index - skip] = index;
+            titles[index - skip] = _spacesProposals[spaceId][index].title;
+            descriptions[index - skip] = _spacesProposals[spaceId][index].body;
+            startTimes[index - skip] = _spacesProposals[spaceId][index].startTime;
+            endTimes[index - skip] = _spacesProposals[spaceId][index].endTime;
+            choicesCount[index - skip] = _spacesProposals[spaceId][index].choices.length;
+        }
+    }
+
+    // get space proposal
+    function getSpaceProposal(uint256 spaceId, uint256 proposalId) public view returns (string memory title, string memory description, uint256 startTime, uint256 endTime, uint256 choicesCount) {
+        return (_spacesProposals[spaceId][proposalId].title, _spacesProposals[spaceId][proposalId].body, _spacesProposals[spaceId][proposalId].startTime, _spacesProposals[spaceId][proposalId].endTime, _spacesProposals[spaceId][proposalId].choices.length);
+    }
+
+    // get space proposal choices
+    function getSpaceProposalChoices(uint256 spaceId, uint256 proposalId) public view returns (bytes32[] memory choices) {
+        return _spacesProposals[spaceId][proposalId].choices;
+    }
+
+    // get space proposal votes
+    function getSpaceProposalVotes(uint256 spaceId, uint256 proposalId, uint256 skip, uint256 limit) public view returns (address[] memory voters, uint256[][] memory votes) {
+        uint256 length = _spacesProposalsVoters[spaceId][proposalId].length;
+        for (uint256 index = skip; index < length && index < (skip + limit); index++) {
+            address voter = _spacesProposalsVoters[spaceId][proposalId][index];
+            votes[index - skip] = _spacesProposalsVotes[spaceId][proposalId][voter].votes;
+            voters[index - skip] = voter;
+        }
+    }
+
+}

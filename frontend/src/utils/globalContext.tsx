@@ -18,7 +18,7 @@ type HOCProps = {
 };
 
 // https://stackoverflow.com/a/58405003/13442719
-const GlobalContext = React.createContext<HOCProps>(undefined!);
+export const GlobalContext = React.createContext<HOCProps>(undefined!);
 
 type ProviderProps = {
 	children: React.ReactNode;
@@ -62,7 +62,7 @@ export const deepMerge = (target: { [key: string]: any }, source: { [key: string
 
 // https://stackoverflow.com/a/56989122/13442719
 export const connect = <T,>(Component: React.ComponentType<T>) => {
-	return (props: any) => (
+	return (props: T | any) => (
 		<GlobalContext.Consumer>
 			{(value: { state: object; setState: setStateType }) => (
 				<Component {...props} {...value.state} setState={value.setState} />

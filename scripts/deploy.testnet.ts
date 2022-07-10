@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as vuilder from '@vite/vuilder';
-import config from './deploy.config.json';
+import config from './deploy.config.testnet.json';
 
 async function run(): Promise<void> {
 	const provider = vuilder.newProvider(config.http);

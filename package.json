@@ -1,12 +1,15 @@
 {
-	"name": "buymeacoffe",
+	"name": "vitasensus",
 	"version": "0.0.1",
 	"description": "",
 	"main": "app.js",
 	"scripts": {
 		"test": "npx vuilder test",
 		"deploy": "npx ts-node scripts/deploy.ts",
-		"compile": "npx vuilder compile Cafe.solpp"
+		"deploy:testnet": "npx ts-node scripts/deploy.testnet.ts",
+		"deploy:localnet": "npx ts-node scripts/deploy.localnet.ts",
+		"start-node": "npx vuilder node --config ./viteConfig.default.json",
+		"compile": "npx vuilder compile Vitasensus.solpp"
 	},
 	"author": "shan@vite.org",
 	"license": "ISC",
@@ -26,6 +29,5 @@
 		"nodemon": "^2.0.4",
 		"ts-node": "10.8.1",
 		"typescript": "4.7.3"
-	},
-	"dependencies": {}
+	}
 }

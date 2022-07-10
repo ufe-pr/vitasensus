@@ -8,7 +8,7 @@ export type TextInputRefObject = {
 };
 
 type Props = HTMLProps<HTMLInputElement> & {
-	label: string;
+	label?: string;
 	value: string;
 	onUserInput: (value: string) => void;
 	containerClassName?: string;
@@ -64,12 +64,12 @@ const TextInput = ({
 	const [issue, issueSet] = useState('');
 	const [focused, focusedSet] = useState(false);
 	const [visible, visibleSet] = useState(false);
-	const id = useMemo(() => label.toLowerCase().replace(/\s+/g, '-'), [label]);
+	const id = useMemo(() => label?.toLowerCase().replace(/\s+/g, '-'), [label]);
 	const Tag = useMemo(() => (textarea ? 'textarea' : 'input'), [textarea]);
 
 	return (
 		<div className={`relative ${containerClassName}`}>
-			<label
+			{label && <label
 				htmlFor={id}
 				onMouseDown={() => setTimeout(() => input.current!.focus(), 0)}
 				className={`absolute transition-all pt-0.5 w-[calc(100%-1.2rem)] duration-200 ${
@@ -81,7 +81,7 @@ const TextInput = ({
 				{label}
 				{/* {optional && ' - optional'} */}
 				{optional && ' (?)'}
-			</label>
+			</label>}
 			{password && (
 				<button
 					className={`absolute right-3 top-4 h-8 w-8 p-1.5 -m-1.5 transition duration-200 ${
@@ -105,7 +105,7 @@ const TextInput = ({
 				value={value}
 				disabled={disabled}
 				autoComplete="off"
-				className={`px-2 pt-4 w-full text-lg block bg-skin-middleground transition duration-200 border-2 rounded ${
+				className={`px-2 ${label ? 'pt-4 pb-2' : 'py-2'} w-full text-lg block bg-skin-middleground transition duration-200 border-2 rounded ${
 					password ? 'pr-10' : ''
 				} ${
 					focused

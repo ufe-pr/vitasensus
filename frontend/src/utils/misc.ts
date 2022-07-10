@@ -22,3 +22,9 @@ export const validateInputs = (
 	}
 	return allRefsInputsAreValid;
 };
+
+export const formatNumberCompact = (num: number | bigint) =>
+	Intl.NumberFormat('en-US', { compactDisplay: 'short', notation: 'compact' }).format(num);
+
+export const formatNumberPercentage = (num: number | bigint) =>
+	Intl.NumberFormat('en-US', { style: 'percent', notation: 'compact' }).format(num);

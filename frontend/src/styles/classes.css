@@ -1,6 +1,6 @@
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* @tailwind components;
+@tailwind utilities; */
 
 @layer base {
 	.xy {
@@ -25,5 +25,27 @@
 
 	.brightness-button {
 		@apply transition-[filter] duration-150 hover:brightness-95 dark:hover:brightness-125;
+	}
+
+	h1 {
+		@apply text-3xl;
+	}
+	h2 {
+		@apply text-2xl;
+	}
+	h3 {
+		@apply text-xl my-2;
+	}
+	h4 {
+		@apply text-lg;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		@apply font-semibold text-skin-primary;
 	}
 }

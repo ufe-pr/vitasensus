@@ -1,0 +1,22 @@
+{
+    "compilers": {
+      "solppc": {
+        "name": "solppc",
+        "version": "0.8.0"
+      }
+    },
+    "nodes": {
+      "latest": {
+        "name": "gvite",
+        "version": "v2.11.2",
+        "http": "http://0.0.0.0:48132/",
+        "ws": "ws://0.0.0.0:41420/",
+        "mnemonic":  "record deliver increase organ subject whisper private tourist final athlete unit jacket arrow trick sweet chuckle direct print master post senior pluck whale taxi"
+      }
+    },
+    "defaultNode": "latest",
+    "mocha": {
+      "timeout": 120000
+    }
+  }
+  
