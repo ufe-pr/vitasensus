@@ -59,6 +59,7 @@ const TextInput = ({
 	maxLength,
 	getIssue = () => '',
 	_ref,
+	required,
 }: Props) => {
 	const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>();
 	const [issue, issueSet] = useState('');
@@ -69,19 +70,21 @@ const TextInput = ({
 
 	return (
 		<div className={`relative ${containerClassName}`}>
-			{label && <label
-				htmlFor={id}
-				onMouseDown={() => setTimeout(() => input.current!.focus(), 0)}
-				className={`absolute transition-all pt-0.5 w-[calc(100%-1.2rem)] duration-200 ${
-					focused || value
-						? 'bg-skin-middleground top-0.5 left-2 font-bold text-xs'
-						: 'top-2.5 left-2.5'
-				} ${focused ? 'text-skin-highlight' : 'text-skin-muted'}`}
-			>
-				{label}
-				{/* {optional && ' - optional'} */}
-				{optional && ' (?)'}
-			</label>}
+			{label && (
+				<label
+					htmlFor={id}
+					onMouseDown={() => setTimeout(() => input.current!.focus(), 0)}
+					className={`absolute transition-all pt-0.5 w-[calc(100%-1.2rem)] duration-200 ${
+						focused || value
+							? 'bg-skin-middleground top-0.5 left-2 font-bold text-xs'
+							: 'top-2.5 left-2.5'
+					} ${focused ? 'text-skin-highlight' : 'text-skin-muted'}`}
+				>
+					{label}
+					{/* {optional && ' - optional'} */}
+					{optional && ' (?)'}
+				</label>
+			)}
 			{password && (
 				<button
 					className={`absolute right-3 top-4 h-8 w-8 p-1.5 -m-1.5 transition duration-200 ${
@@ -105,7 +108,9 @@ const TextInput = ({
 				value={value}
 				disabled={disabled}
 				autoComplete="off"
-				className={`px-2 ${label ? 'pt-4 pb-2' : 'py-2'} w-full text-lg block bg-skin-middleground transition duration-200 border-2 rounded ${
+				className={`px-2 ${
+					label ? 'pt-4 pb-2' : 'py-2'
+				} w-full text-lg block bg-skin-middleground transition duration-200 border-2 rounded ${
 					password ? 'pr-10' : ''
 				} ${
 					focused
@@ -175,6 +180,7 @@ const TextInput = ({
 						}
 					}
 				}}
+				required={required}
 			/>
 			{issue && <p className="mt-1 text-sm leading-3 font-bold text-red-500">{issue}</p>}
 		</div>

@@ -17,7 +17,8 @@ import ProposalsList from '../components/ProposalsList';
 import SingleProposal from '../pages/SingleProposal';
 import CreateSpace from '../pages/CreateSpace';
 import SpaceCreateProposal from '../components/SpaceCreateProposal';
-import { getPastEvents } from '../utils/viteScripts';
+import { confirmCallContract, getPastEvents } from '../utils/viteScripts';
+import { SpacesContextProvider } from '../utils/SpacesContext';
 
 const providerWsURLs = {
 	...(PROD ? {} : { localnet: 'ws://localhost:23457' }),
@@ -29,7 +30,7 @@ const providerOptions = { retryTimes: 10, retryInterval: 5000 };
 
 type Props = State;
 
-const Router = ({ setState, vcInstance, networkType }: Props) => {
+const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) => {
 	const connectedAccount = useMemo(() => vcInstance?.accounts[0], [vcInstance]);
 
 	const rpc = useMemo(() => {
@@ -97,7 +98,7 @@ const Router = ({ setState, vcInstance, networkType }: Props) => {
 	}, [setState, subscribe, vcInstance, viteApi, updateViteBalanceInfo]);
 
 	const callContract = useCallback(
-		(
+		async (
 			contract: typeof CafeContract,
 			methodName: string,
 			params: any[] = [],
@@ -125,9 +126,10 @@ const Router = ({ setState, vcInstance, networkType }: Props) => {
 				tokenId,
 				amount,
 			}).accountBlock;
-			return vcInstance.signAndSendTx([{ block }]);
+			const sendBlock = await vcInstance.signAndSendTx([{ block }]);
+			return await confirmCallContract(viteApi, sendBlock);
 		},
-		[connectedAccount, networkType, vcInstance]
+		[connectedAccount, networkType, vcInstance, viteApi]
 	);
 	useEffect(() => {
 		setState({ callContract });
@@ -155,8 +157,7 @@ const Router = ({ setState, vcInstance, networkType }: Props) => {
 				address: toAddress,
 				data: dataBase64,
 			});
-			console.log("queryContract result: ", result);
-			
+			console.log('queryContract result: ', result);
 
 			// parse result
 			if (result) {
@@ -195,35 +196,39 @@ const Router = ({ setState, vcInstance, networkType }: Props) => {
 		setState({ scanEvents });
 	}, [setState, scanEvents]);
 
+	console.log('ViteBalanceInfo: ', viteBalanceInfo);
+
 	return (
 		<BrowserRouter>
-			<PageContainer>
-				<Routes>
-					<Route path="/" element={<Spaces />} />
-					<Route path="/create" element={<CreateSpace />} />
-					<Route path="/space/:spaceId/">
-						<Route
-							index
-							element={
-								<SingleSpace>
-									<ProposalsList />
-								</SingleSpace>
-							}
-						/>
-						<Route path="proposals/:proposalId" element={<SingleProposal />} />
-						<Route
-							path="create"
-							element={
-								<SingleSpace>
-									<SpaceCreateProposal />
-								</SingleSpace>
-							}
-						/>
-					</Route>
+			<SpacesContextProvider>
+				<PageContainer>
+					<Routes>
+						<Route path="/" element={<Spaces />} />
+						<Route path="/create" element={<CreateSpace />} />
+						<Route path="/space/:spaceId/">
+							<Route
+								index
+								element={
+									<SingleSpace>
+										<ProposalsList />
+									</SingleSpace>
+								}
+							/>
+							<Route path="proposals/:proposalId" element={<SingleProposal />} />
+							<Route
+								path="create"
+								element={
+									<SingleSpace>
+										<SpaceCreateProposal />
+									</SingleSpace>
+								}
+							/>
+						</Route>
 
-					<Route path="*" element={<Navigate to="/" />} />
-				</Routes>
-			</PageContainer>
+						<Route path="*" element={<Navigate to="/" />} />
+					</Routes>
+				</PageContainer>
+			</SpacesContextProvider>
 			<Toast />
 		</BrowserRouter>
 	);

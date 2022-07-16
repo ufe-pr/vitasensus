@@ -1,4 +1,3 @@
-import { Proposal, ProposalState } from '../client/types';
 import { useProposals } from '../hooks/proposal';
 import { useCurrentSpace } from '../hooks/space';
 import { connect } from '../utils/globalContext';
@@ -6,7 +5,10 @@ import { ProposalListItem } from './ProposalListItem';
 
 const ProposalsList = () => {
 	const space = useCurrentSpace();
-	const { data: proposals } = useProposals(space?.id ?? 0);
+	const { data: proposals } = useProposals(space?.id);
+	console.log("currentSpace", space);
+	
+
 	return (
 		<>
 			<h2>Proposals for {space?.name}</h2>
@@ -18,7 +20,7 @@ const ProposalsList = () => {
 			<div className="my-4 md:space-y-6 lg:space-y-8">
 				{space &&
 					proposals &&
-					proposals.map((proposal) => <ProposalListItem proposal={proposal} space={space} />)}
+					proposals.map((proposal) => <ProposalListItem key={proposal.id} proposal={proposal} space={space} />)}
 			</div>
 		</>
 	);

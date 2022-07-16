@@ -28,3 +28,25 @@ export const formatNumberCompact = (num: number | bigint) =>
 
 export const formatNumberPercentage = (num: number | bigint) =>
 	Intl.NumberFormat('en-US', { style: 'percent', notation: 'compact' }).format(num);
+
+export async function waitFor(
+	conditionFn: () => Promise<boolean>,
+	pollInterval: number = 1000,
+	retries: number = 5
+) {
+	const poll = (resolve: any) => {
+		retries--;
+		conditionFn()
+			.then((result) => {
+				if (result) {
+					resolve();
+				} else {
+					retries && setTimeout(() => poll(resolve), pollInterval);
+				}
+			})
+			.catch(() => {
+				retries && setTimeout(() => poll(resolve), pollInterval);
+			});
+	};
+	return new Promise(poll);
+}

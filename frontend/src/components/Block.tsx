@@ -1,4 +1,3 @@
-import { title } from 'process';
 import React, { ReactNode } from 'react';
 
 export function Block({
@@ -7,14 +6,18 @@ export function Block({
 	children,
 	className,
 	title,
+	endTitle,
 	titleClassName,
+	endTitleClassName,
 }: {
 	loading?: boolean;
 	slim?: boolean;
 	children: ReactNode | ReactNode[];
 	className?: string;
 	title?: string;
+	endTitle?: string;
 	titleClassName?: string;
+	endTitleClassName?: string;
 }) {
 	return (
 		<div
@@ -23,14 +26,22 @@ export function Block({
 				(className ? ` ${className}` : '')
 			}
 		>
-			{title && (
-				<div
-					className={
-						'text-lg font-bold min-h-[4rem] border-b border-b-skin-alt px-4 md:px-6 fx' +
-						(titleClassName ? ` ${titleClassName}` : '')
-					}
-				>
-					{title}
+			{(title || endTitle) && (
+				<div className="flex justify-between min-h-[4rem] border-b border-b-skin-alt px-4 md:px-6 fx">
+					{title && (
+						<div className={'text-lg font-bold' + (titleClassName ? ` ${titleClassName}` : '')}>
+							{title}
+						</div>
+					)}
+					{endTitle && (
+						<div
+							className={
+								'text-base font-normal' + (endTitleClassName ? ` ${endTitleClassName}` : '')
+							}
+						>
+							{endTitle}
+						</div>
+					)}
 				</div>
 			)}
 			{loading ? (

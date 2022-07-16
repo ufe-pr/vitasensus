@@ -1,35 +1,42 @@
 import { useEffect, useState } from 'react';
-import { Proposal, ProposalState } from '../client/types';
+import { Proposal } from '../client/types';
 import { useClient } from './client';
 // import { useSpace } from './space';
 
 export function useProposal(spaceId: number, id: number): Proposal | null | '404' {
 	const [proposal, setProposal] = useState<Proposal | null>(null);
+	const [proposalNotFound, setProposalNotFound] = useState<boolean>(false);
+	const client = useClient();
+
 	useEffect(() => {
-		setProposal({
-			author: 'vite_f32d7394da38392c4798428b37fcc5927507915cfee64a3c4a',
-			choices: ['Choice 1', 'Choice 2'],
-			description: `Tables are an essential part of any application. Manually creating and styling tables is no longer efficient as there is such a wide variety of ready-made libraries available for that purpose.
+		client
+			.getProposal(spaceId, id)
+			.then(
+				async (proposal) => {
+					if (proposal) {
+						return proposal;
+					}
+					return null;
+				},
+				(e) => {
+					console.error(e);
 
-			These are five of the most popular React Table Libraries. We’ll be looking at the pros and cons of each and see some quick implementation examples.
-			
-			Make sure to publish and manage your customized tables in cloud component hubs like Bit (Github). It’ll save you time and make sure you don’t bore yourself to death by repeating yourself.`,
-			end: 0,
-			id: id,
-			link: '',
-			passActions: [],
-			spaceId: spaceId,
-			start: 0,
-			title: 'Random title',
-			state: ProposalState.active,
-		});
-	}, [id, spaceId]);
+					return null;
+				}
+			)
+			.then((proposal) => {
+				console.log('Proposal', proposal);
 
-	return proposal;
+				!proposal && setProposalNotFound(true);
+				setProposal(proposal);
+			});
+	}, [client, id, spaceId]);
+
+	return proposalNotFound ? '404' : proposal;
 }
 
 export function useProposals(
-	spaceId: number,
+	spaceId?: number | null,
 	count: number = 20
 ): { data?: Proposal[]; error?: object } {
 	const client = useClient();
@@ -38,12 +45,17 @@ export function useProposals(
 	const [error, setError] = useState<object>();
 
 	useEffect(() => {
+		if (spaceId === undefined || spaceId === null) return;
 		if (resultsEnd) return;
 		if ((proposals?.length ?? 0) >= count) return;
+
+		console.log('get proposals', spaceId);
 
 		client
 			.getProposals(spaceId, { skip: proposals?.length! })
 			.then((results) => {
+				console.log('get proposals results', spaceId, results);
+
 				if (results.length === 0) {
 					setResultsEnd(true);
 				} else {

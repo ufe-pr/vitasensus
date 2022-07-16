@@ -1,15 +1,37 @@
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Block } from '../components/Block';
-import { PrimaryButton } from '../components/PrimaryButton';
 import { ProfileSettingsBlock } from '../components/ProfileSettingsBlock';
+import { useClient } from '../hooks/client';
 import { connect } from '../utils/globalContext';
 
 const CreateSpace = () => {
+	const client = useClient();
+	const navigate = useNavigate();
+	const createSpace = useCallback(
+		async ({
+			name,
+			about,
+			avatar,
+			website,
+			token,
+		}: {
+			name: string;
+			about: string;
+			avatar: string;
+			website: string;
+			token: string;
+		}) => {
+			const space = await client.createSpace(name, about, token, avatar, website);
+			navigate('/space/' + space.id, { replace: true });
+		},
+		[client, navigate]
+	);
 	return (
-		<div className="flex flex-wrap lg:flex-nowrap">
+		<div className="flex flex-wrap lg:flex-nowrap gap-4">
 			<div className="order-2 w-full lg:order-none lg:w-8/12 space-y-3 md:space-y-6">
 				<h1>Create a space</h1>
-				<ProfileSettingsBlock />
-				<PrimaryButton>Create space</PrimaryButton>
+				<ProfileSettingsBlock onSubmit={createSpace} />
 			</div>
 			<div className="w-full order-1 lg:order-none lg:w-4/12 mb-4 lg:mb-0">
 				<Block className="text-skin-muted">

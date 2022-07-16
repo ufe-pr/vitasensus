@@ -6,9 +6,11 @@ import { useClient } from './client';
 
 export function useJoinSpace(): (id: number) => Promise<void> {
 	const navigate = useNavigate();
-	return async (name) => {
-		// TODO: Join the space on blockchain and update local state
-		navigate('/space/' + name, { replace: false });
+	const client = useClient();
+
+	return async (id) => {
+		await client.joinSpace(id);
+		navigate('/space/' + id, { replace: false });
 	};
 }
 
@@ -24,6 +26,10 @@ export function useSpace(id: number): DetailedSpace | null | '404' {
 	const [spaceNotFound, setSpaceNotFound] = useState<boolean>(false);
 	const client = useClient();
 
+	console.log('useSpace', id);
+	console.log('useSpace', space);
+	console.log('useSpace', spaceNotFound);
+
 	useEffect(() => {
 		client
 			.getSpace(id)
@@ -33,7 +39,6 @@ export function useSpace(id: number): DetailedSpace | null | '404' {
 						!space.admins?.length && (await client.loadSpaceAdmins(id));
 						!space.description && (await client.loadSpaceDescription(id));
 						space.members?.length !== space.memberCount && (await client.loadSpaceMembers(id));
-						!space.token.symbol && (await client.loadTokenDetails(id));
 						return client.getSpace(id);
 					}
 					return null;
@@ -44,7 +49,8 @@ export function useSpace(id: number): DetailedSpace | null | '404' {
 			)
 			.then((space) => {
 				!space && setSpaceNotFound(true);
-				setSpace(space);
+				space && setSpace(space);
+				space && setSpaceNotFound(false);
 			});
 	}, [client, id]);
 
@@ -62,7 +68,6 @@ export function useSpaces(count: number = 20): { data?: Space[]; error?: object 
 	const [error, setError] = useState<object>();
 
 	useEffect(() => {
-		// client.createSpace('Vite', '', 'tti_5649544520544f4b454e6e40', '', '');
 		if (resultsEnd) return;
 		if ((spaces?.length ?? 0) >= count) return;
 

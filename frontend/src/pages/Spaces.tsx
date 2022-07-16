@@ -1,18 +1,11 @@
-import { RefreshIcon, ArrowSmDownIcon, ChevronDownIcon } from '@heroicons/react/outline';
-import { useCallback, useEffect, useState } from 'react';
-import { Space } from '../client/types';
+import { ChevronDownIcon } from '@heroicons/react/outline';
+import { useState } from 'react';
 import DropdownButton from '../components/DropdownButton';
 import SpacesList from '../components/SpacesList';
 import TextInput from '../components/TextInput';
 import { connect } from '../utils/globalContext';
-import { useTitle } from '../utils/hooks';
-import { shortenAddress } from '../utils/strings';
-import { CoffeeBuyEvent, State } from '../utils/types';
-import { getPastEvents } from '../utils/viteScripts';
 
-type Props = State & {};
-
-const Spaces = ({}: Props) => {
+const Spaces = () => {
 	const [search, setSearch] = useState('');
 	return (
 		<>

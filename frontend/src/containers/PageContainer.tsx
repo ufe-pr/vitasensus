@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import {
 	TranslateIcon,
 	SunIcon,
@@ -14,6 +14,8 @@ import ViteConnectButton from './ViteConnectButton';
 import ViteLogo from '../assets/ViteLogo';
 import { PROD } from '../utils/constants';
 import DropdownButton from '../components/DropdownButton';
+import { Link } from 'react-router-dom';
+import { SpacesContext } from '../utils/SpacesContext';
 
 type Props = State & {
 	noPadding?: boolean;
@@ -99,7 +101,7 @@ type SidebarItemProps = {
 function SidebarItem({ avatar, label, href, className }: SidebarItemProps) {
 	return (
 		<div className="h-11 w-full xy">
-			<a href={href}>
+			<Link to={href}>
 				<button
 					className={
 						(className || '') +
@@ -112,22 +114,25 @@ function SidebarItem({ avatar, label, href, className }: SidebarItemProps) {
 						avatar
 					)}
 				</button>
-			</a>
+			</Link>
 		</div>
 	);
 }
 
 function Sidebar({ isOpen }: { isOpen?: boolean }) {
+	const { userSpaces } = useContext(SpacesContext);
+	// const [_, rebuild] = useState({});
+
 	return (
 		<div
 			className={
 				(isOpen ? 'w-16' : 'w-0') +
-				' md:w-20 h-screen grow-0 shrink-0 top-0 sticky border-r border-r-skin-alt py-8'
+				' md:w-20 h-screen grow-0 shrink-0 top-0 sticky border-r border-r-skin-alt py-8 overflow-hidden'
 			}
 		>
 			<ul className="flex flex-col gap-y-6">
 				<li>
-					<SidebarItem avatar={<ViteLogo />} label="Home" href="#" className="border-none" />
+					<SidebarItem avatar={<ViteLogo />} label="Home" href="/" className="border-none" />
 				</li>
 				<li>
 					<SidebarItem
@@ -137,12 +142,11 @@ function Sidebar({ isOpen }: { isOpen?: boolean }) {
 					/>
 				</li>
 				<span className="w-4/5 h-0.5 bg-skin-alt mx-auto my-2"></span>
-				<li>
-					<SidebarItem avatar="/favicon.png" label="Home" href="#" />
-				</li>
-				<li>
-					<SidebarItem avatar="/favicon.png" label="Home" href="#" />
-				</li>
+				{userSpaces.map((space) => (
+					<li key={space.id}>
+						<SidebarItem avatar={space.avatar} label={space.name} href={`/space/${space.id}`} />
+					</li>
+				))}
 			</ul>
 		</div>
 	);

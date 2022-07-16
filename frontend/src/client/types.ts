@@ -1,27 +1,65 @@
-export interface Proposal {
+export class ChoiceAction {
+	constructor(readonly executor: string, readonly data: string) {}
+}
+
+export enum ProposalState {
+	active = 'active',
+	closed = 'closed',
+	pending = 'pending',
+}
+
+export class Proposal {
 	id: number;
 	author: string;
 	spaceId: number;
 	space?: Space;
 	title: string;
 	description: string;
-	link: string;
 	choices: string[];
+	choicesVotesCounts: number[];
 	start: number;
 	end: number;
-	passActions: { address: string; calldata: string }[];
-	state: ProposalState;
-}
+	passActions: ChoiceAction[];
 
-export enum ProposalState {
-	active = 'active',
-	closed = 'closed',
+	get state(): ProposalState {
+		if (this.end * 1000 < Date.now()) {
+			return ProposalState.closed;
+		}
+		if (this.start * 1000 > Date.now()) {
+			return ProposalState.pending;
+		}
+		return ProposalState.active;
+	}
+
+	constructor({
+		id,
+		author,
+		spaceId,
+		title,
+		description,
+		choices,
+		choicesVotesCounts,
+		start,
+		end,
+		passActions,
+	}: Proposal) {
+		this.id = id;
+		this.author = author;
+		this.spaceId = spaceId;
+		this.title = title;
+		this.description = description;
+		this.choices = choices;
+		this.choicesVotesCounts = choicesVotesCounts;
+		this.start = start;
+		this.end = end;
+		this.passActions = passActions;
+	}
 }
 
 export interface Vote {
 	id: number;
 	author: string;
-	space: string;
+	space: number;
 	proposal: number;
 	choices: number[];
 	amount: number;
@@ -31,6 +69,7 @@ export interface Token {
 	id: string;
 	name: string;
 	symbol: string;
+	decimals: number;
 }
 
 export interface Space {

@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-3.0
+pragma soliditypp >=0.8.0;
+
+interface VitasensusProposalExecutor {
+	function executeVitasensusProposal(bytes32 data) external;
+}
+
+contract A is VitasensusProposalExecutor {
+	event EventA(bytes32 indexed data);
+
+	function executeVitasensusProposal(bytes32 data) external override {
+		emit EventA(data);
+	}
+}

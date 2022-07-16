@@ -8,18 +8,6 @@ const Vitasensus = {
 		{
 			anonymous: false,
 			inputs: [
-				{ indexed: true, internalType: 'address', name: 'contractAddress', type: 'address' },
-				{ indexed: false, internalType: 'bytes32', name: 'data', type: 'bytes32' },
-				{ indexed: true, internalType: 'uint256', name: 'proposalId', type: 'uint256' },
-				{ indexed: false, internalType: 'uint256', name: 'spaceId', type: 'uint256' },
-				{ indexed: false, internalType: 'uint256', name: 'value', type: 'uint256' },
-			],
-			name: 'ContractInteractionTransactionExecuted',
-			type: 'event',
-		},
-		{
-			anonymous: false,
-			inputs: [
 				{ indexed: true, internalType: 'uint256', name: 'spaceId', type: 'uint256' },
 				{ indexed: true, internalType: 'address', name: 'user', type: 'address' },
 			],
@@ -37,13 +25,20 @@ const Vitasensus = {
 		},
 		{
 			anonymous: false,
+			inputs: [{ indexed: false, internalType: 'uint256', name: '', type: 'uint256' }],
+			name: 'LogUint',
+			type: 'event',
+		},
+		{
+			anonymous: false,
 			inputs: [
 				{ indexed: true, internalType: 'uint256', name: 'id', type: 'uint256' },
 				{ indexed: true, internalType: 'uint256', name: 'spaceId', type: 'uint256' },
+				{ indexed: true, internalType: 'address', name: 'author', type: 'address' },
 				{ indexed: false, internalType: 'string', name: 'title', type: 'string' },
-				{ indexed: false, internalType: 'uint256', name: 'timestamp', type: 'uint256' },
-				{ indexed: false, internalType: 'uint256', name: 'choiceCount', type: 'uint256' },
 				{ indexed: false, internalType: 'string', name: 'description', type: 'string' },
+				{ indexed: false, internalType: 'uint256', name: 'startTime', type: 'uint256' },
+				{ indexed: false, internalType: 'uint256', name: 'endTime', type: 'uint256' },
 			],
 			name: 'ProposalCreated',
 			type: 'event',
@@ -159,18 +154,6 @@ const Vitasensus = {
 			type: 'event',
 		},
 		{
-			anonymous: false,
-			inputs: [
-				{ indexed: true, internalType: 'address', name: 'sender', type: 'address' },
-				{ indexed: true, internalType: 'address', name: 'receiver', type: 'address' },
-				{ indexed: true, internalType: 'uint256', name: 'proposalId', type: 'uint256' },
-				{ indexed: false, internalType: 'uint256', name: 'spaceId', type: 'uint256' },
-				{ indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256' },
-			],
-			name: 'TransferTransactionExecuted',
-			type: 'event',
-		},
-		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
 				{ internalType: 'address', name: 'newAdmin', type: 'address' },
@@ -187,24 +170,9 @@ const Vitasensus = {
 				{ internalType: 'string', name: 'description', type: 'string' },
 				{ internalType: 'uint256', name: 'startTime', type: 'uint256' },
 				{ internalType: 'uint256', name: 'endTime', type: 'uint256' },
-				{
-					internalType: 'bytes32[]',
-					name: 'choices',
-					type: 'bytes32[]',
-					value: '["0x476974636f696e000000000000000000000000000000000000000000000000"]',
-				},
-				{
-					internalType: 'address[]',
-					name: 'choicesExecutors',
-					type: 'address[]',
-					value: '["vite_22ad191e13ccb892c812244e537bb409785e5831bd88729204"]',
-				},
-				{
-					internalType: 'bytes32[]',
-					name: 'choicesData',
-					type: 'bytes32[]',
-					value: '["0x476974636f696e000000000000000000000000000000000000000000000000"]',
-				},
+				{ internalType: 'bytes32[]', name: 'choices', type: 'bytes32[]' },
+				{ internalType: 'address[]', name: 'choicesExecutors', type: 'address[]' },
+				{ internalType: 'bytes32[]', name: 'choicesData', type: 'bytes32[]' },
 			],
 			name: 'createProposal',
 			outputs: [],
@@ -218,6 +186,7 @@ const Vitasensus = {
 				{ internalType: 'tokenId', name: 'spaceToken', type: 'tokenId' },
 				{ internalType: 'bytes32', name: 'avatar', type: 'bytes32' },
 				{ internalType: 'bytes32', name: 'website', type: 'bytes32' },
+				{ internalType: 'uint256', name: 'spaceTokenDecimals', type: 'uint256' },
 			],
 			name: 'createSpace',
 			outputs: [],
@@ -251,6 +220,7 @@ const Vitasensus = {
 				{ internalType: 'bytes32', name: 'avatar', type: 'bytes32' },
 				{ internalType: 'bytes32', name: 'website', type: 'bytes32' },
 				{ internalType: 'uint256', name: 'memberCounts', type: 'uint256' },
+				{ internalType: 'uint256', name: 'tokenDecimals', type: 'uint256' },
 			],
 			stateMutability: 'view',
 			type: 'function',
@@ -282,9 +252,13 @@ const Vitasensus = {
 			outputs: [
 				{ internalType: 'string', name: 'title', type: 'string' },
 				{ internalType: 'string', name: 'description', type: 'string' },
+				{ internalType: 'address', name: 'author', type: 'address' },
 				{ internalType: 'uint256', name: 'startTime', type: 'uint256' },
 				{ internalType: 'uint256', name: 'endTime', type: 'uint256' },
-				{ internalType: 'uint256', name: 'choicesCount', type: 'uint256' },
+				{ internalType: 'bytes32[]', name: 'choices', type: 'bytes32[]' },
+				{ internalType: 'address[]', name: 'choicesExecutors', type: 'address[]' },
+				{ internalType: 'bytes32[]', name: 'choicesData', type: 'bytes32[]' },
+				{ internalType: 'uint256[]', name: 'votes', type: 'uint256[]' },
 			],
 			stateMutability: 'view',
 			type: 'function',
@@ -356,6 +330,24 @@ const Vitasensus = {
 			type: 'function',
 		},
 		{
+			inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
+			name: 'getUserSpaces',
+			outputs: [
+				{ internalType: 'uint256[]', name: 'spaceIds', type: 'uint256[]' },
+				{ internalType: 'bytes32[]', name: 'names', type: 'bytes32[]' },
+				{ internalType: 'bytes32[]', name: 'avatars', type: 'bytes32[]' },
+			],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
+			inputs: [],
+			name: 'getZeroAddress',
+			outputs: [{ internalType: 'address', name: '', type: 'address' }],
+			stateMutability: 'pure',
+			type: 'function',
+		},
+		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
 				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
@@ -378,7 +370,7 @@ const Vitasensus = {
 		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
-				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
+				{ internalType: 'uint256', name: 'proposalId', type: 'uint256', value: '1' },
 			],
 			name: 'isProposalExecuted',
 			outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
@@ -432,10 +424,28 @@ const Vitasensus = {
 		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
+				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
+				{ internalType: 'address', name: 'voter', type: 'address' },
+			],
+			name: 'redeemVotedTokens',
+			outputs: [],
+			stateMutability: 'nonpayable',
+			type: 'function',
+		},
+		{
+			inputs: [
+				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
 				{ internalType: 'address', name: 'admin', type: 'address' },
 			],
 			name: 'removeSpaceAdmin',
 			outputs: [],
+			stateMutability: 'nonpayable',
+			type: 'function',
+		},
+		{
+			inputs: [],
+			name: 'timestamp',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 			stateMutability: 'nonpayable',
 			type: 'function',
 		},
