@@ -29,6 +29,6 @@ export const useKeyPress = (targetKey: string, handler: () => void, allowDefault
 
 export const useTitle = (title?: string) => {
 	useEffect(() => {
-		document.title = `${title ? `${title} - ` : ''}Vite Express`;
+		document.title = `${title ? `${title} - ` : ''}Vitasensus`;
 	}, [title]);
 };
