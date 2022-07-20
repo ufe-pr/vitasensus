@@ -5,10 +5,12 @@ interface VitasensusProposalExecutor {
 	function executeVitasensusProposal(bytes32 data) external;
 }
 
-contract A is VitasensusProposalExecutor {
+contract ExternalCallTestContract is VitasensusProposalExecutor {
 	event EventA(bytes32 indexed data);
+	bytes32 public data;
 
-	function executeVitasensusProposal(bytes32 data) external override {
-		emit EventA(data);
+	function executeVitasensusProposal(bytes32 data_) external override {
+		data = data_;
+		emit EventA(data_);
 	}
 }

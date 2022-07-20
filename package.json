@@ -15,6 +15,7 @@
 	"license": "ISC",
 	"devDependencies": {
 		"@types/chai": "^4.2.21",
+		"@types/chai-as-promised": "^7.1.5",
 		"@types/chai-like": "^1.1.1",
 		"@types/chai-things": "^0.0.35",
 		"@types/mocha": "^9.0.0",
@@ -22,6 +23,7 @@
 		"@vite/vuilder": "0.1.0-alpha.16",
 		"axios": "^0.21.4",
 		"chai": "^4.3.4",
+		"chai-as-promised": "^7.1.1",
 		"chai-like": "^1.1.1",
 		"chai-things": "^0.2.0",
 		"get-stream": "^6.0.1",
@@ -29,5 +31,9 @@
 		"nodemon": "^2.0.4",
 		"ts-node": "10.8.1",
 		"typescript": "4.7.3"
+	},
+	"dependencies": {
+		"bignumber.js": "^9.0.2",
+		"chai-bn": "^0.3.1"
 	}
 }

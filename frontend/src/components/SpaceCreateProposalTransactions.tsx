@@ -50,7 +50,7 @@ export const SpaceCreateProposalTransactions = ({
 											setBatches(newBatches);
 										}}
 										value={batch.data}
-										maxLength={32}
+										maxLength={66}
 									/>
 								</div>
 							</div>
