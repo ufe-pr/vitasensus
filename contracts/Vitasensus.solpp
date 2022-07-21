@@ -89,10 +89,6 @@ contract Vitasensus {
 	mapping(uint256 => mapping(uint256 => mapping(address => Vote))) _spacesProposalsVotes;
 	mapping(uint256 => mapping(uint256 => address[])) _spacesProposalsVoters;
 
-	function getZeroAddress() public pure returns (address) {
-		return address(0);
-	}
-
 	// Modifier declarations
 
 	// Access modifiers

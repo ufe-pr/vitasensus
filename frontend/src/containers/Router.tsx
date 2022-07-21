@@ -21,9 +21,9 @@ import { confirmCallContract, getPastEvents } from '../utils/viteScripts';
 import { SpacesContextProvider } from '../utils/SpacesContext';
 
 const providerWsURLs = {
-	...(PROD ? {} : { localnet: 'ws://localhost:23457' }),
-	testnet: 'wss://buidl.vite.net/gvite/ws',
-	mainnet: 'wss://node.vite.net/gvite/ws', // or 'wss://node-tokyo.vite.net/ws'
+	...(PROD ? {} : { localnet: process.env.REACT_APP_LOCAL_NETWORK || 'ws://localhost:23457' }),
+	testnet: process.env.REACT_APP_TEST_NETWORK || 'wss://buidl.vite.net/gvite/ws',
+	mainnet: process.env.REACT_APP_MAIN_NETWORK || 'wss://node.vite.net/gvite/ws', // or 'wss://node-tokyo.vite.net/ws'
 };
 const providerTimeout = 60000;
 const providerOptions = { retryTimes: 10, retryInterval: 5000 };

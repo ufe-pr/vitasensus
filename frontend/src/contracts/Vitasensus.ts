@@ -1,8 +1,8 @@
 const Vitasensus = {
 	address: {
-		mainnet: '',
-		testnet: 'vite_40a7f24b11036aaa293a0a9751f66c1d88e7a6a13e9d0cb629', // <your_contract_address>
-		localnet: 'vite_22ad191e13ccb892c812244e537bb409785e5831bd88729204',
+		mainnet: process.env.REACT_APP_VITASENSUS_MAINNET_CONTRACT_ADDRESS,
+		testnet: process.env.REACT_APP_VITASENSUS_TESTNET_CONTRACT_ADDRESS || 'vite_f1926c54b81069e4ecb2face559739714cdbc3b00423056c86', // <your_contract_address>
+		localnet: process.env.REACT_APP_VITASENSUS_LOCALNET_CONTRACT_ADDRESS || 'vite_22ad191e13ccb892c812244e537bb409785e5831bd88729204',
 	},
 	abi: [
 		{
