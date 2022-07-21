@@ -367,7 +367,7 @@ export class SensusClient {
 			encodeStringToBytes32(website),
 			this.getToken(spaceToken).decimals,
 		])) as any;
-		console.log(result);
+		console.log("createSpace call contract", result);
 
 		const events: any[] = (await this.scanEvents(
 			VitasensusContract,
@@ -377,7 +377,7 @@ export class SensusClient {
 		const event = events[events.length - 1] as any;
 		const spaceId = event.returnValues.id;
 
-		const space = this.getSpace(spaceId);
+		const space = await this.getSpace(spaceId);
 		return space;
 	}
 

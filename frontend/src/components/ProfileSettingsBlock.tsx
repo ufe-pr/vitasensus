@@ -78,6 +78,7 @@ export const ProfileSettingsBlock = ({
 						onUserInput={setAvatar}
 						value={avatar}
 						placeholder="e.g. https://space.com/avatar.png"
+						maxLength={32}
 					/>
 				</div>
 				<div>
@@ -108,7 +109,7 @@ export const ProfileSettingsBlock = ({
 					<TextInput
 						onUserInput={(e) => setToken(e)}
 						value={token}
-						maxLength={160}
+						maxLength={28}
 						placeholder="e.g tti_000000000000000000000000"
 						required
 					/>
@@ -120,7 +121,7 @@ export const ProfileSettingsBlock = ({
 						onUserInput={setWebsite}
 						value={website}
 						data-error="getErrorMessage('website')"
-						maxLength={160}
+						maxLength={32}
 						placeholder="e.g. https://www.example.com"
 					/>
 				</div>
