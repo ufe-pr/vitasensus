@@ -109,7 +109,7 @@ function SidebarItem({ avatar, label, href, className }: SidebarItemProps) {
 					}
 				>
 					{typeof avatar === 'string' ? (
-						<img className="h-full object-cover" src={avatar} alt={label} />
+						<img className="h-full w-full object-cover" src={avatar} alt={label} />
 					) : (
 						avatar
 					)}

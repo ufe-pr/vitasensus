@@ -3,6 +3,7 @@ import { Space } from '../../client/types';
 import { useSpaces } from '../../hooks/space';
 import { formatNumberCompact } from '../../utils/misc';
 import JoinButton from '../JoinButton';
+import SpaceAvatar from '../SpaceAvatar';
 
 type Props = {
 	className?: string;
@@ -15,9 +16,7 @@ const SpaceComponent = ({ space }: { space: Space }) => {
 				className="px-6 py-6 rounded-3xl flex flex-col gap-y-6 items-center border-2 border-gray-400/20"
 				key={space.id}
 			>
-				<div className="h-20 w-20 p-4 rounded-full bg-gray-400 bg-opacity-20">
-					{space.avatar && <img src={space.avatar} alt={`${space.name} logo`} />}
-				</div>
+				{space && <SpaceAvatar space={space} size={80} />}
 				<h2 className="font-semibold text-lg">{space.name}</h2>
 				<div>{(space.memberCount && formatNumberCompact(space.memberCount)) ?? '-'} members</div>
 				<JoinButton space={space} />

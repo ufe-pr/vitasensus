@@ -4,6 +4,7 @@ import { Space } from '../client/types';
 import { connect } from '../utils/globalContext';
 import { formatNumberCompact } from '../utils/misc';
 import JoinButton from './JoinButton';
+import SpaceAvatar from './SpaceAvatar';
 
 const SidebarLink = (props: NavLinkProps) => {
 	return (
@@ -23,9 +24,7 @@ const SpaceSidebar = ({ space }: { space: Space }) => {
 		<div className="w-full md:w-60 leading-5 sm:leading-6 shrink-0">
 			<div className="border-y border-skin-alt bg-skin-base text-base md:rounded-xl md:border py-4">
 				<div className="fy gap-y-2 text-center py-4">
-					<div className="h-20 w-20 p-4 rounded-full bg-gray-400 bg-opacity-20">
-						{space.avatar && <img src={space.avatar} alt={`${space.name} logo`} />}
-					</div>
+					{space && <SpaceAvatar space={space} size={80} />}
 					<h3 className="mx-3 mb-0.5 xy">
 						<div className="mr-1 truncate">{space.name}</div>
 					</h3>
