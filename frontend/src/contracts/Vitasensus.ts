@@ -1,8 +1,12 @@
 const Vitasensus = {
 	address: {
 		mainnet: process.env.REACT_APP_VITASENSUS_MAINNET_CONTRACT_ADDRESS,
-		testnet: process.env.REACT_APP_VITASENSUS_TESTNET_CONTRACT_ADDRESS || 'vite_f1926c54b81069e4ecb2face559739714cdbc3b00423056c86', // <your_contract_address>
-		localnet: process.env.REACT_APP_VITASENSUS_LOCALNET_CONTRACT_ADDRESS || 'vite_22ad191e13ccb892c812244e537bb409785e5831bd88729204',
+		testnet:
+			process.env.REACT_APP_VITASENSUS_TESTNET_CONTRACT_ADDRESS ||
+			'vite_f1926c54b81069e4ecb2face559739714cdbc3b00423056c86', // <your_contract_address>
+		localnet:
+			process.env.REACT_APP_VITASENSUS_LOCALNET_CONTRACT_ADDRESS ||
+			'vite_22ad191e13ccb892c812244e537bb409785e5831bd88729204',
 	},
 	abi: [
 		{
@@ -21,12 +25,6 @@ const Vitasensus = {
 				{ indexed: true, internalType: 'address', name: 'user', type: 'address' },
 			],
 			name: 'LeftSpace',
-			type: 'event',
-		},
-		{
-			anonymous: false,
-			inputs: [{ indexed: false, internalType: 'uint256', name: '', type: 'uint256' }],
-			name: 'LogUint',
 			type: 'event',
 		},
 		{
@@ -238,6 +236,13 @@ const Vitasensus = {
 		},
 		{
 			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
+			name: 'getSpaceMembersCount',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
+			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
 			name: 'getSpaceOwner',
 			outputs: [{ internalType: 'address', name: '', type: 'address' }],
 			stateMutability: 'view',
@@ -291,6 +296,16 @@ const Vitasensus = {
 		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
+				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
+			],
+			name: 'getSpaceProposalVotesCount',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
+			inputs: [
+				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
 				{ internalType: 'uint256', name: 'skip', type: 'uint256' },
 				{ internalType: 'uint256', name: 'limit', type: 'uint256' },
 			],
@@ -303,6 +318,13 @@ const Vitasensus = {
 				{ internalType: 'uint256[]', name: 'endTimes', type: 'uint256[]' },
 				{ internalType: 'uint256[]', name: 'choicesCount', type: 'uint256[]' },
 			],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
+			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
+			name: 'getSpaceProposalsCount',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 			stateMutability: 'view',
 			type: 'function',
 		},
@@ -330,6 +352,13 @@ const Vitasensus = {
 			type: 'function',
 		},
 		{
+			inputs: [],
+			name: 'getSpacesCount',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
 			inputs: [{ internalType: 'address', name: 'user', type: 'address' }],
 			name: 'getUserSpaces',
 			outputs: [
@@ -337,6 +366,16 @@ const Vitasensus = {
 				{ internalType: 'bytes32[]', name: 'names', type: 'bytes32[]' },
 				{ internalType: 'bytes32[]', name: 'avatars', type: 'bytes32[]' },
 			],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
+			inputs: [
+				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
+				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
+			],
+			name: 'getWinningChoiceIndex',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 			stateMutability: 'view',
 			type: 'function',
 		},
@@ -370,7 +409,7 @@ const Vitasensus = {
 		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
-				{ internalType: 'uint256', name: 'proposalId', type: 'uint256', value: '1' },
+				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
 			],
 			name: 'isProposalExecuted',
 			outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
@@ -439,13 +478,6 @@ const Vitasensus = {
 			],
 			name: 'removeSpaceAdmin',
 			outputs: [],
-			stateMutability: 'nonpayable',
-			type: 'function',
-		},
-		{
-			inputs: [],
-			name: 'timestamp',
-			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 			stateMutability: 'nonpayable',
 			type: 'function',
 		},

@@ -75,43 +75,17 @@ export class SensusClient {
 		let proposals = new Array<Proposal>();
 		if (skip + limit > Object.keys(this._cachedProposals[spaceId] ?? {}).length) {
 			try {
-				const events = (await this.scanEvents(
+				const proposalCountResult = (await this.queryContract(
 					VitasensusContract,
-					'0',
-					'ProposalCreated'
-				)) as Array<{ returnValues: Array<any> & any }>;
-				console.log(events);
+					'getSpaceProposalsCount',
+					[spaceId]
+				)) as unknown as string[];
+				const proposalCount = new BigNumber(proposalCountResult[0]).toNumber();
 
-				for (const event of events
-					.filter((event) => event.returnValues.spaceId === spaceId.toString())
-					.slice(skip, skip + limit)) {
-					const spaceId = Number.parseInt(event.returnValues.spaceId);
-					const proposalId = Number.parseInt(event.returnValues.id);
-					const title = event.returnValues.title;
-					const description = event.returnValues.description;
-					const author = event.returnValues.author;
-					const startTime = Number.parseInt(event.returnValues.startTime);
-					const endTime = Number.parseInt(event.returnValues.endTime);
-					const space = this._cachedSpaces[spaceId];
-					console.log(space);
-
-					const proposal = new Proposal({
-						id: proposalId,
-						title,
-						description,
-						author,
-						space,
-						choices: [],
-						passActions: [],
-						choicesVotesCounts: [],
-						state: ProposalState.active,
-						start: startTime,
-						end: endTime,
-						spaceId,
-					});
-					proposals.push(proposal);
+				for (let i = skip; i < skip + limit && i < proposalCount; i++) {
+					const proposal = await this.getProposal(spaceId, i);
+					proposal && proposals.push(proposal);
 				}
-				this._cacheProposals(spaceId, proposals);
 			} catch (e) {
 				console.error(e);
 			}

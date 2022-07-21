@@ -49,10 +49,13 @@ export function useProposals(
 		if (resultsEnd) return;
 		if ((proposals?.length ?? 0) >= count) return;
 
-		console.log('get proposals', spaceId);
+		console.log('get proposals', spaceId, count);
 
 		client
-			.getProposals(spaceId, { skip: proposals?.length! })
+			.getProposals(spaceId, {
+				skip: proposals?.length ?? 0,
+				limit: count - (proposals?.length ?? 0),
+			})
 			.then((results) => {
 				console.log('get proposals results', spaceId, results);
 

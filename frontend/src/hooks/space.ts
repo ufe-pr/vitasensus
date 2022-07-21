@@ -72,7 +72,7 @@ export function useSpaces(count: number = 20): { data?: Space[]; error?: object 
 		if ((spaces?.length ?? 0) >= count) return;
 
 		client
-			.getSpaces({ skip: spaces?.length! })
+			.getSpaces({ skip: spaces?.length ?? 0, limit: count - (spaces?.length ?? 0) })
 			.then((results) => {
 				if (results.length === 0) {
 					setResultsEnd(true);
