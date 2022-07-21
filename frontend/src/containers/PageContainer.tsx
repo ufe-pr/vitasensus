@@ -265,9 +265,13 @@ function ThemeToggleButton({ i18n }: { i18n: any }) {
 								onClick={() => {
 									localStorage.theme = label;
 									themeSet(label);
-									if (label === 'light' || !prefersDarkTheme()) {
+									if (label === 'light') {
 										document.documentElement.classList.remove('dark');
 									} else if (label === 'dark' || prefersDarkTheme()) {
+										document.documentElement.classList.add('dark');
+									} else if (!prefersDarkTheme()) {
+										document.documentElement.classList.remove('dark');
+									} else if (prefersDarkTheme()) {
 										document.documentElement.classList.add('dark');
 									}
 								}}
