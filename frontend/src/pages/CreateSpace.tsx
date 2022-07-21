@@ -1,13 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Block } from '../components/Block';
 import { ProfileSettingsBlock } from '../components/ProfileSettingsBlock';
 import { useClient } from '../hooks/client';
 import { connect } from '../utils/globalContext';
+import { SpacesContext } from '../utils/SpacesContext';
 
 const CreateSpace = () => {
 	const client = useClient();
 	const navigate = useNavigate();
+	const { userSpaces, setUserSpaces } = useContext(SpacesContext);
 	const createSpace = useCallback(
 		async ({
 			name,
@@ -23,9 +25,10 @@ const CreateSpace = () => {
 			token: string;
 		}) => {
 			const space = await client.createSpace(name, about, token, avatar, website);
+			setUserSpaces([...userSpaces, space]);
 			navigate('/space/' + space.id, { replace: true });
 		},
-		[client, navigate]
+		[client, navigate, setUserSpaces, userSpaces]
 	);
 	return (
 		<div className="flex flex-wrap lg:flex-nowrap gap-4">
