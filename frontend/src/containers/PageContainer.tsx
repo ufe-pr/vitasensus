@@ -267,7 +267,7 @@ function ThemeToggleButton({ i18n }: { i18n: any }) {
 									themeSet(label);
 									if (label === 'light') {
 										document.documentElement.classList.remove('dark');
-									} else if (label === 'dark' || prefersDarkTheme()) {
+									} else if (label === 'dark') {
 										document.documentElement.classList.add('dark');
 									} else if (!prefersDarkTheme()) {
 										document.documentElement.classList.remove('dark');

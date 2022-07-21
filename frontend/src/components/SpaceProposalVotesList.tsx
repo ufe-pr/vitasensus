@@ -1,7 +1,6 @@
 import { Proposal, Token, Vote } from '../client/types';
 import { formatNumberCompact } from '../utils/misc';
 import { Block } from './Block';
-import { PrimaryButton } from './PrimaryButton';
 import { User } from './User';
 
 export const SpaceProposalVotesList = ({
@@ -34,19 +33,6 @@ export const SpaceProposalVotesList = ({
 					</div>
 				</div>
 			))}
-			<div className="px-3 py-4">
-				<PrimaryButton
-				// v-if="
-				// 	isFinalProposal
-				// 	? sortedVotes.length < voteCount
-				// 	: sortedVotes.length > 10 && nbrVisibleVotes < sortedVotes.length
-				// "
-				// data-click="isFinalProposal ? $emit('loadVotes') : (nbrVisibleVotes += 10)"
-				>
-					
-					<span>See more</span>
-				</PrimaryButton>
-			</div>
 		</Block>
 	);
 };

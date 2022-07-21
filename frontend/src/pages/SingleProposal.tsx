@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DetailedSpace, Proposal, ProposalState, Space } from '../client/types';
 import { Block } from '../components/Block';
@@ -88,7 +88,27 @@ const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: Detailed
 };
 
 const MainContent = ({ proposal, space }: { proposal: Proposal; space: DetailedSpace }) => {
-	const { data: votes } = useVotes(proposal.spaceId, proposal.id);
+	const [maxVotesCount, setMaxVotesCount] = useState(10);
+	const { data: votes } = useVotes(proposal.spaceId, proposal.id, maxVotesCount);
+
+	const updateCount = useCallback(() => {
+		if ((votes?.length ?? 0) >= maxVotesCount) setMaxVotesCount(maxVotesCount + 10);
+	}, [maxVotesCount, votes?.length]);
+
+	const loadingRef = useRef<Element>();
+
+	useEffect(() => {
+		var options = {
+			root: null,
+			rootMargin: '0px',
+			threshold: 1.0,
+		};
+
+		const observer = new IntersectionObserver(updateCount, options);
+		loadingRef.current && observer.observe(loadingRef.current);
+
+		return () => observer.disconnect();
+	}, [updateCount]);
 	const onVoteSubmitted = useCallback(() => {
 		window.location.reload();
 	}, []);
@@ -139,9 +159,6 @@ const MainContent = ({ proposal, space }: { proposal: Proposal; space: DetailedS
 						proposal={proposal as Proposal}
 						votes={votes}
 						token={(space as Space).token}
-						// loaded="loadedVotes"
-						// loading-more="loadingMore"
-						// loadVotes="loadMore(loadMoreVotes)"
 					/>
 				)}
 			</div>
