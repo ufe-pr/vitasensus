@@ -43,9 +43,8 @@ export const SpaceProposalVotesList = ({
 				// "
 				// data-click="isFinalProposal ? $emit('loadVotes') : (nbrVisibleVotes += 10)"
 				>
-					{/* <LoadingSpinner v-if="loadingMore" /> */}
-					{/*v-else */}
-					<span v-text="$t('seeMore')">See more</span>
+					
+					<span>See more</span>
 				</PrimaryButton>
 			</div>
 		</Block>

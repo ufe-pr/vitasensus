@@ -89,6 +89,10 @@ const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: Detailed
 
 const MainContent = ({ proposal, space }: { proposal: Proposal; space: DetailedSpace }) => {
 	const { data: votes } = useVotes(proposal.spaceId, proposal.id);
+	const onVoteSubmitted = useCallback(() => {
+		window.location.reload();
+	}, []);
+
 	return (
 		<div className="relative w-full lg:w-8/12 lg:pr-5">
 			<div className="px-3 md:px-0">
@@ -127,7 +131,9 @@ const MainContent = ({ proposal, space }: { proposal: Proposal; space: DetailedS
 				</div>
 			</div>
 			<div className="space-y-4">
-				{proposal.state === ProposalState.active && <SpaceProposalVote proposal={proposal} />}
+				{proposal.state === ProposalState.active && (
+					<SpaceProposalVote proposal={proposal} onVoteSubmitted={onVoteSubmitted} />
+				)}
 				{votes && (
 					<SpaceProposalVotesList
 						proposal={proposal as Proposal}

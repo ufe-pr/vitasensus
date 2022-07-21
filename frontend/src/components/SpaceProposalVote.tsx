@@ -35,7 +35,7 @@ const Loader = ({ className }: { className?: string }) => {
 	);
 };
 
-export const SpaceProposalVote = ({ proposal }: { proposal?: Proposal; className?: string }) => {
+export const SpaceProposalVote = ({ proposal, onVoteSubmitted }: { proposal?: Proposal; className?: string, onVoteSubmitted: () => void }) => {
 	const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
 	const [loading, setLoading] = useState(false);
 	const client = useClient();
@@ -110,11 +110,12 @@ export const SpaceProposalVote = ({ proposal }: { proposal?: Proposal; className
 		try {
 			await client.vote(proposal.spaceId, proposal.id, selectedChoices);
 			setSelectedChoices(new Array(proposal.choices.length).fill(0));
+			onVoteSubmitted();
 		} catch (e) {
 			console.error(e);
 		}
 		setLoading(false);
-	}, [client, proposal, selectedChoices]);
+	}, [client, onVoteSubmitted, proposal, selectedChoices]);
 
 	console.log('aaaaaaa');
 
