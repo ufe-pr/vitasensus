@@ -26,9 +26,10 @@ export function useSpace(id: number): DetailedSpace | null | '404' {
 	const [spaceNotFound, setSpaceNotFound] = useState<boolean>(false);
 	const client = useClient();
 
-	console.log('useSpace', id);
-	console.log('useSpace', space);
-	console.log('useSpace', spaceNotFound);
+	useEffect(() => {
+		setSpace(null);
+		setSpaceNotFound(false);
+	}, [client, id]);
 
 	useEffect(() => {
 		client
@@ -66,6 +67,12 @@ export function useSpaces(count: number = 20): { data?: Space[]; error?: object 
 	const [spaces, setSpaces] = useState<Space[]>();
 	const [resultsEnd, setResultsEnd] = useState(false);
 	const [error, setError] = useState<object>();
+
+	useEffect(() => {
+		setSpaces([]);
+		setResultsEnd(false);
+		setError(undefined);
+	}, [client]);
 
 	useEffect(() => {
 		if (resultsEnd) return;

@@ -9,6 +9,11 @@ export function useProposal(spaceId: number, id: number): Proposal | null | '404
 	const client = useClient();
 
 	useEffect(() => {
+		setProposal(null);
+		setProposalNotFound(false);
+	}, [client, id, spaceId]);
+
+	useEffect(() => {
 		client
 			.getProposal(spaceId, id)
 			.then(
@@ -43,6 +48,12 @@ export function useProposals(
 	const [proposals, setProposals] = useState<Proposal[]>();
 	const [resultsEnd, setResultsEnd] = useState(false);
 	const [error, setError] = useState<object>();
+
+	useEffect(() => {
+		setProposals([]);
+		setResultsEnd(false);
+		setError(undefined);
+	}, [spaceId, client]);
 
 	useEffect(() => {
 		if (spaceId === undefined || spaceId === null) return;
