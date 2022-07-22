@@ -13,5 +13,7 @@
         "other": "on",
         "comments": "off",
         "strings": "on"
-    }
+    },
+    "scss.lint.unknownAtRules": "ignore",
+    "css.lint.unknownAtRules": "ignore"
 }
