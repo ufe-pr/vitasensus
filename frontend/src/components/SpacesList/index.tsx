@@ -8,6 +8,8 @@ import SpaceAvatar from '../SpaceAvatar';
 
 type Props = {
 	className?: string;
+	query?: string;
+	isMember?: boolean;
 };
 
 const SpaceComponent = ({ space }: { space: Space }) => {
@@ -26,7 +28,7 @@ const SpaceComponent = ({ space }: { space: Space }) => {
 	);
 };
 
-const SpacesList = ({ className }: Props) => {
+const SpacesList = ({ className, query }: Props) => {
 	const [maxSpacesCount, setMaxSpacesCount] = useState(20);
 	const { data: spaces } = useSpaces(maxSpacesCount);
 
@@ -50,7 +52,11 @@ const SpacesList = ({ className }: Props) => {
 	}, [updateCount]);
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-center mx-auto">
-			{spaces && spaces.map((space) => <SpaceComponent key={space.id} space={space} />)}
+			{spaces
+				?.filter((space) => !query || space.name.toLowerCase().includes(query))
+				.map((space) => (
+					<SpaceComponent key={space.id} space={space} />
+				))}
 			{(spaces?.length ?? 0) >= maxSpacesCount && (
 				<div
 					ref={(ref) => (loadingRef.current = ref || undefined)}
