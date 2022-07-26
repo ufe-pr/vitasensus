@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DetailedSpace, Proposal, ProposalState, Space } from '../client/types';
 import { Block } from '../components/Block';
-import { Loader } from '../components/Loader';
+import { Loader, PageLoader } from '../components/Loader';
 import { Markdown } from '../components/Markdown';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ProposalStateLabel } from '../components/ProposalStateLabel';
@@ -18,7 +18,7 @@ import { useVotes } from '../hooks/vote';
 import { connect } from '../utils/globalContext';
 import { formatDate } from '../utils/strings';
 
-const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: DetailedSpace }) => {
+const RightSidebar = ({ proposal }: { proposal: Proposal; space: DetailedSpace }) => {
 	const startDate = new Date(proposal.start * 1000);
 	const endDate = new Date(proposal.end * 1000);
 	const [loading, setLoading] = useState(false);
@@ -170,9 +170,9 @@ const SingleProposal = () => {
 	const { spaceId, proposalId } = useParams();
 	const space = useSpace(Number.parseInt(spaceId ?? '') ?? '');
 	const proposal = useProposal(Number.parseInt(spaceId ?? ''), Number.parseInt(proposalId ?? ''));
-	console.log(space, proposal, spaceId, proposalId);
+	
 
-	if (!proposal || !space || space === '404' || proposal === '404') return <div />;
+	if (!proposal || !space || space === '404' || proposal === '404') return <PageLoader />;
 
 	return (
 		<div className="lg:flex">

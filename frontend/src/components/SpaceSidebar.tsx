@@ -1,6 +1,7 @@
 import type { NavLinkProps } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import { Space } from '../client/types';
+import { useIsSpaceAdmin } from '../hooks/space';
 import { connect } from '../utils/globalContext';
 import { formatNumberCompact } from '../utils/misc';
 import JoinButton from './JoinButton';
@@ -20,6 +21,7 @@ const SidebarLink = (props: NavLinkProps) => {
 };
 
 const SpaceSidebar = ({ space }: { space: Space }) => {
+	const isAdmin = useIsSpaceAdmin(space.id);
 	return (
 		<div className="w-full md:w-60 leading-5 sm:leading-6 shrink-0">
 			<div className="border-y border-skin-alt bg-skin-base text-base md:rounded-xl md:border py-4">
@@ -36,6 +38,9 @@ const SpaceSidebar = ({ space }: { space: Space }) => {
 				<div className="py-4">
 					<SidebarLink to={'/space/' + space.id}>Proposals</SidebarLink>
 					<SidebarLink to={'/space/' + space.id + '/create'}>Create proposal</SidebarLink>
+					{isAdmin && (
+						<SidebarLink to={'/space/' + space.id + '/edit'}>Edit profile</SidebarLink>
+					)}
 				</div>
 			</div>
 		</div>

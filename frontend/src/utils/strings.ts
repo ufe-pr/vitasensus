@@ -78,7 +78,9 @@ export const formatDate = (date: number | Date, verbose?: boolean, utc?: boolean
 			minute < 10 ? `0${minute}` : minute
 		}`;
 	}
-	return `${year}-${month + 1}-${day} ${hour.toString().padStart(2, '0')}:${minute}:${second.toString().padStart(2, '0')}`;
+	return `${year}-${(month + 1).toString().padStart(2, '0')}-${day} ${hour
+		.toString()
+		.padStart(2, '0')}:${minute}:${second.toString().padStart(2, '0')}`;
 };
 
 export function decodeBytes32ToString(value: string): string {

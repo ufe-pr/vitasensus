@@ -1,4 +1,13 @@
-import { ChoiceAction, DetailedSpace, Proposal, ProposalState, Space, Token, Vote } from './types';
+import {
+	ChoiceAction,
+	DetailedSpace,
+	Proposal,
+	ProposalState,
+	Space,
+	SpaceSettings,
+	Token,
+	Vote,
+} from './types';
 import VitasensusContract from '../contracts/Vitasensus';
 import { decodeBytes32ToString, encodeStringToBytes32 } from '../utils/strings';
 import { ViteBalanceInfo } from '../utils/types';
@@ -41,6 +50,7 @@ export class SensusClient {
 	) {}
 
 	private _cachedSpaces: { [id: number]: DetailedSpace } = {};
+	private _cachedSpacesSettings: { [id: number]: SpaceSettings } = {};
 	private _cachedProposals: { [spaceId: number]: { [proposalId: number]: Proposal } } = {};
 	private _cachedTokens: { [id: string]: Token } = {};
 	private _cachedVotes: {
@@ -51,6 +61,10 @@ export class SensusClient {
 		for (const space of spaces) {
 			this._cachedSpaces[space.id] = space;
 		}
+	}
+
+	private async _cacheSpaceSettings(spaceId: number, spaceSettings: SpaceSettings): Promise<void> {
+		this._cachedSpacesSettings[spaceId] = spaceSettings;
 	}
 
 	private async _cacheProposals(spaceId: number, proposals: Proposal[]): Promise<void> {
@@ -119,8 +133,6 @@ export class SensusClient {
 			votes,
 		] = result;
 		await this.getSpace(spaceId);
-		console.log('getSpaceProposal result', result);
-		console.log(votes);
 
 		const proposal = new Proposal({
 			id: id,
@@ -143,7 +155,6 @@ export class SensusClient {
 					: ProposalState.active,
 			space: this._cachedSpaces[spaceId],
 		});
-		console.log(proposal);
 
 		await this._cacheProposals(spaceId, [proposal]);
 		return proposal;
@@ -153,11 +164,26 @@ export class SensusClient {
 
 	async loadSpaceMembers(spaceId: number): Promise<void> {}
 
-	async loadSpaceAdmins(spaceId: number): Promise<void> {}
+	async loadSpaceAdmins(spaceId: number): Promise<void> {
+		try {
+			let addresses = [];
+			const result = (await this.queryContract(VitasensusContract, 'getSpaceAdmins', [
+				spaceId,
+			])) as Array<string>[];
+
+			for (let i = 0; i < result[0].length; i++) {
+				const address = result[0][i];
+				addresses.push(address);
+			}
+			this._cachedSpaces[spaceId].admins = addresses;
+		} catch (e) {
+			console.error(e);
+		}
+	}
 
 	async loadTokenDetails(tokenId: string): Promise<void> {
 		const tokenInfo = await getTokenInfo(this.viteApi, tokenId);
-		console.log(tokenInfo);
+
 		this._cachedTokens[tokenId] = {
 			name: tokenInfo.tokenName,
 			symbol: tokenInfo.tokenSymbol,
@@ -258,18 +284,15 @@ export class SensusClient {
 		return spaces;
 	}
 
-	async getSpace(id: number): Promise<DetailedSpace | null> {
-		console.log('getSpace', id);
-
-		if (this._cachedSpaces[id] && this._cachedSpaces[id].description) return this._cachedSpaces[id];
+	async getSpace(id: number, recache: boolean = false): Promise<DetailedSpace | null> {
+		if (!recache && this._cachedSpaces[id] && this._cachedSpaces[id].description)
+			return this._cachedSpaces[id];
 		const result = (await this.queryContract(VitasensusContract, 'getSpaceExternal', [
 			id,
 		])) as object[] as unknown[] as string[];
-		console.log(result);
 
 		const [name, description, token, avatar, website, memberCount, decimals] = result;
 		await this.loadTokenDetails(token);
-		console.log('decimals', decimals);
 
 		const space: DetailedSpace = {
 			id: id,
@@ -284,9 +307,27 @@ export class SensusClient {
 			token: this.getToken(token, decimals),
 		};
 		await this._cacheSpaces([space]);
-		console.log(space);
 
 		return space;
+	}
+
+	async getSpaceSettings(id: number, recache: boolean = false): Promise<SpaceSettings> {
+		if (!recache && this._cachedSpacesSettings[id]) return this._cachedSpacesSettings[id];
+
+		const result = (await this.queryContract(VitasensusContract, 'getSpaceSettings', [
+			id,
+		])) as unknown as string[];
+
+		const createProposalThreshold = parseInt(result[0]);
+		const onlyAdminsCanCreateProposal = result[1] === '1';
+
+		const spaceSettings: SpaceSettings = {
+			createProposalThreshold,
+			onlyAdminsCanCreateProposal,
+		};
+		await this._cacheSpaceSettings(id, spaceSettings);
+
+		return spaceSettings;
 	}
 
 	async getVotes(
@@ -306,7 +347,6 @@ export class SensusClient {
 					skip,
 					limit,
 				])) as Array<string | Array<string>>[];
-				console.log('client get votes', result);
 
 				const [voters, votess] = result;
 				for (let i = 0; i < result[0].length; i++) {
@@ -367,7 +407,6 @@ export class SensusClient {
 			encodeStringToBytes32(website),
 			this.getToken(spaceToken).decimals,
 		])) as any;
-		console.log("createSpace call contract", result);
 
 		const events: any[] = (await this.scanEvents(
 			VitasensusContract,
@@ -379,6 +418,55 @@ export class SensusClient {
 
 		const space = await this.getSpace(spaceId);
 		return space;
+	}
+
+	async updateSpace(
+		spaceId: number,
+		name: string,
+		description: string,
+		spaceToken: string,
+		avatar: string,
+		website: string
+	): Promise<any> {
+		await this.loadTokenDetails(spaceToken);
+		await this.callContract(VitasensusContract, 'updateSpace', [
+			spaceId,
+			encodeStringToBytes32(name),
+			description,
+			spaceToken,
+			this.getToken(spaceToken).decimals,
+			encodeStringToBytes32(avatar),
+			encodeStringToBytes32(website),
+		]);
+
+		const space = await this.getSpace(spaceId, true);
+		return space;
+	}
+
+	async updateSpaceProposalThreshold(
+		spaceId: number,
+		proposalThreshold: number,
+		onlyAdminsCanCreateProposal: boolean
+	): Promise<any> {
+		await this.callContract(VitasensusContract, 'updateSpaceCreateProposalThreshold', [
+			spaceId,
+			proposalThreshold,
+			onlyAdminsCanCreateProposal,
+		]);
+	}
+
+	async updateSpaceAdmins(spaceId: number, admins: string[]) {
+		await this.callContract(VitasensusContract, 'setSpaceAdmins', [spaceId, admins]);
+	}
+
+	async isSpaceAdmin(spaceId: number): Promise<boolean> {
+		if (!this.address) return false;
+		const result = (await this.queryContract(VitasensusContract, 'isSpaceAdmin', [
+			spaceId,
+			this.address,
+		])) as any as string[];
+
+		return result[0] === '1';
 	}
 
 	async createProposal({
@@ -409,14 +497,12 @@ export class SensusClient {
 			actions.map((action) => action.executor),
 			actions.map((action) => action.data.padEnd(64, '0')),
 		])) as any;
-		console.log(result);
 
 		const events: any[] = (await this.scanEvents(
 			VitasensusContract,
 			result.height,
 			'ProposalCreated'
 		)) as any[];
-		console.log(events);
 
 		const event = events[events.length - 1] as any;
 		const proposalId = event.returnValues.id;
@@ -426,8 +512,6 @@ export class SensusClient {
 	}
 
 	async vote(spaceId: number, proposal: number, choiceAmounts: number[]): Promise<void> {
-		console.log('vote', spaceId, proposal, choiceAmounts);
-
 		await this.getSpace(spaceId);
 		await this.callContract(
 			VitasensusContract,
@@ -454,16 +538,10 @@ export class SensusClient {
 	}
 
 	async executeProposal(spaceId: number, proposalId: number): Promise<void> {
-		const result = await this.callContract(VitasensusContract, 'executeProposal', [
-			spaceId,
-			proposalId,
-		]);
-		console.log(result);
+		await this.callContract(VitasensusContract, 'executeProposal', [spaceId, proposalId]);
 	}
 
 	async isProposalExecuted(spaceId: number, proposalId: number): Promise<boolean> {
-		console.log('isProposalExecuted', spaceId, proposalId);
-
 		const result = (await this.queryContract(VitasensusContract, 'isProposalExecuted', [
 			spaceId,
 			proposalId,

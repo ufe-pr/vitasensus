@@ -30,7 +30,7 @@ export function useProposal(spaceId: number, id: number): Proposal | null | '404
 				}
 			)
 			.then((proposal) => {
-				console.log('Proposal', proposal);
+				
 
 				!proposal && setProposalNotFound(true);
 				setProposal(proposal);
@@ -60,7 +60,7 @@ export function useProposals(
 		if (resultsEnd) return;
 		if ((proposals?.length ?? 0) >= count) return;
 
-		console.log('get proposals', spaceId, count);
+		
 
 		client
 			.getProposals(spaceId, {
@@ -68,7 +68,7 @@ export function useProposals(
 				limit: count - (proposals?.length ?? 0),
 			})
 			.then((results) => {
-				console.log('get proposals results', spaceId, results);
+				
 
 				if (results.length === 0) {
 					setResultsEnd(true);

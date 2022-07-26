@@ -18,3 +18,15 @@ export const Loader = ({ className = 'h-6 w-6' }: { className?: string }) => {
 		</svg>
 	);
 };
+
+export const PageLoader = ({ className }: { className?: string }) => {
+	return (
+		<div className={(className ? className + ' ' : '') + 'w-full xy text-skin-text-muted'}>
+			<div className="flex space-x-5">
+				{new Array(3).fill(0).map(() => (
+					<div className="w-5 h-5 animate-ping bg-current bg-opacity-40 rounded-full"></div>
+				))}
+			</div>
+		</div>
+	);
+};

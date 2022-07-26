@@ -1,6 +1,6 @@
 import { connect } from '../utils/globalContext';
 import tw from 'tailwind-styled-components';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import TextInput from './TextInput';
 import { SpaceCreateProposalChoices } from './SpaceCreateProposalChoices';
 import { SpaceCreateProposalTransactions } from './SpaceCreateProposalTransactions';
@@ -8,7 +8,7 @@ import { ChoiceAction } from '../client/types';
 import { PrimaryButton } from './PrimaryButton';
 import { useNavigate } from 'react-router-dom';
 import { useClient } from '../hooks/client';
-import { useCurrentSpace } from '../hooks/space';
+import { useCurrentSpace, useIsSpaceAdmin, useSpaceSettings, useUserInSpace } from '../hooks/space';
 
 const InputLabel = tw.label`mb-1 md:mb-1.5 text-lg block font-semibold`;
 
@@ -43,6 +43,9 @@ export const SpaceCreateProposal = () => {
 	const [endDate, setEndDate] = useState(new Date(Date.now() + 86400 * 1000 * 3));
 	const space = useCurrentSpace();
 	const client = useClient();
+	const settings = useSpaceSettings(space?.id);
+	const inSpace = useUserInSpace(space?.id);
+	const isSpaceAdmin = useIsSpaceAdmin(space?.id);
 	const navigate = useNavigate();
 
 	const createProposal = useCallback(
@@ -95,6 +98,11 @@ export const SpaceCreateProposal = () => {
 		}).finally(() => setIsLoading(false));
 	}, [actions, choices, createProposal, description, endDate, space, startDate, title]);
 
+	const formIsInvalid = useMemo(
+		() => !title.trim() || !description.trim() || !choices.length || !actions.length,
+		[actions.length, choices.length, description, title]
+	);
+
 	return !space ? (
 		<></>
 	) : (
@@ -102,7 +110,7 @@ export const SpaceCreateProposal = () => {
 			className="space-y-3 md:space-y-6"
 			onSubmit={(e) => {
 				e.preventDefault();
-				if (!title.trim() || !description.trim() || !choices.length || !actions.length) return;
+				if (formIsInvalid) return;
 				onSubmit();
 			}}
 		>
@@ -137,7 +145,15 @@ export const SpaceCreateProposal = () => {
 				batches={actions}
 				setBatches={setActions}
 			/>
-			<PrimaryButton disabled={isLoading}>
+			{settings && settings !== '404' && settings.createProposalThreshold > 0 && (
+				<div className="">
+					<p>
+						The amount of {settings.createProposalThreshold} {space.token.symbol} will be charged
+						upon creating this proposal. It'll be instantly refunded though.
+					</p>
+				</div>
+			)}
+			<PrimaryButton disabled={isLoading || !settings || !inSpace || formIsInvalid}>
 				{isLoading ? (
 					<>
 						<Loader className="h-6 w-6" /> Loading...
@@ -146,6 +162,16 @@ export const SpaceCreateProposal = () => {
 					'Create proposal'
 				)}
 			</PrimaryButton>
+			{!inSpace && !(settings && settings !== '404' && settings.onlyAdminsCanCreateProposal) && (
+				<div className="text-red-400">
+					<p>You're not a member of this space. You need to be a member to create a proposal.</p>
+				</div>
+			)}
+			{!isSpaceAdmin && settings && settings !== '404' && settings.onlyAdminsCanCreateProposal && (
+				<div className="text-red-400">
+					<p>Only space admins can create proposals.</p>
+				</div>
+			)}
 		</form>
 	);
 };

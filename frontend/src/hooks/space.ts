@@ -1,6 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DetailedSpace, Space } from '../client/types';
+import { DetailedSpace, Space, SpaceSettings } from '../client/types';
 import { SpacesContext } from '../utils/SpacesContext';
 import { useClient } from './client';
 
@@ -39,7 +39,6 @@ export function useSpace(id: number): DetailedSpace | null | '404' {
 					if (space) {
 						!space.admins?.length && (await client.loadSpaceAdmins(id));
 						!space.description && (await client.loadSpaceDescription(id));
-						space.members?.length !== space.memberCount && (await client.loadSpaceMembers(id));
 						return client.getSpace(id);
 					}
 					return null;
@@ -58,8 +57,69 @@ export function useSpace(id: number): DetailedSpace | null | '404' {
 	return spaceNotFound ? '404' : space;
 }
 
-export function useAddressInSpace(address: string, name: string): boolean {
-	return false;
+export function useSpaceSettings(id?: number): SpaceSettings | null | '404' {
+	const [spaceSettings, setSpaceSettings] = useState<SpaceSettings | null>(null);
+	const [spaceNotFound, setSpaceNotFound] = useState<boolean>(false);
+	const client = useClient();
+
+	useEffect(() => {
+		setSpaceSettings(null);
+		setSpaceNotFound(false);
+	}, [client, id]);
+
+	useEffect(() => {
+		id !== null &&
+			id !== undefined &&
+			client
+				.getSpaceSettings(id)
+				.then(
+					async (settings) => settings ?? null,
+					(e) => null
+				)
+				.then((settings) => {
+					!settings && setSpaceNotFound(true);
+					settings && setSpaceSettings(settings);
+					settings && setSpaceNotFound(false);
+				});
+	}, [client, id]);
+
+	return spaceNotFound ? '404' : spaceSettings;
+}
+
+export function useIsSpaceAdmin(id?: number): boolean {
+	const client = useClient();
+	const [isAdmin, setIsAdmin] = useState(false);
+
+	useEffect(() => {
+		setIsAdmin(false);
+	}, [client, id]);
+
+	useEffect(() => {
+		id !== null &&
+			id !== undefined &&
+			client
+				.isSpaceAdmin(id)
+				.then(
+					(isAdmin) => isAdmin,
+					(e) => false
+				)
+				.then((isAdmin) => setIsAdmin(isAdmin));
+	}, [client, id]);
+
+	return isAdmin;
+}
+
+export function useUserInSpace(spaceId?: number): boolean {
+	const { userSpaces } = useContext(SpacesContext);
+	const joined = useMemo(
+		() => spaceId !== null && spaceId !== undefined && !!userSpaces.find((s) => s.id === spaceId),
+		[spaceId, userSpaces]
+	);
+
+	
+	
+
+	return joined;
 }
 
 export function useSpaces(count: number = 20): { data?: Space[]; error?: object } {

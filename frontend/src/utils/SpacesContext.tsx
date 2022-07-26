@@ -17,10 +17,9 @@ export const SpacesContextProvider = ({ children }: { children: ReactNode | Reac
 	const client = useClient();
 	const match = useMatch('/space/:spaceId/*');
 	const spaceId = match?.params.spaceId;
-	console.log(Number.parseInt(spaceId ?? ''));
 
 	const space = useSpace(Number.parseInt(spaceId ?? ''));
-	console.log(space);
+	
 
 	const [userSpaces, setUserSpaces] = useState<Space[]>([]);
 

@@ -1,6 +1,6 @@
-import { useState, useCallback, useContext, useMemo } from 'react';
+import { useState, useCallback, useContext } from 'react';
 import { Space } from '../client/types';
-import { useJoinSpace } from '../hooks/space';
+import { useJoinSpace, useUserInSpace } from '../hooks/space';
 import { connect } from '../utils/globalContext';
 import { SpacesContext } from '../utils/SpacesContext';
 
@@ -8,7 +8,7 @@ const JoinButton = ({ space }: { space: Space }) => {
 	const [loading, setLoading] = useState(false);
 	const joinSpace = useJoinSpace();
 	const { userSpaces, setUserSpaces } = useContext(SpacesContext);
-	const joined = useMemo(() => !!userSpaces.find((s) => s.id === space.id), [space.id, userSpaces]);
+	const joined = useUserInSpace(space.id);
 	const handleClick = useCallback(async () => {
 		setLoading(true);
 		try {

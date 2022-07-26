@@ -29,7 +29,6 @@ describe('test Vitasensus', () => {
 
 	beforeEach(async () => {
 		const compiledContracts: CompiledContracts = await vuilder.compile('Vitasensus.solpp');
-		console.log(compiledContracts);
 		expect(compiledContracts).to.have.property('Vitasensus');
 		sensus = compiledContracts.Vitasensus;
 		sensus.setDeployer(deployer);
@@ -303,7 +302,6 @@ describe('test Vitasensus', () => {
 		const compiledContracts: CompiledContracts = await vuilder.compile(
 			'VitasensusProposalExecutor.solpp'
 		);
-		console.log(compiledContracts);
 		expect(compiledContracts).to.have.property('ExternalCallTestContract');
 		const executor = compiledContracts.ExternalCallTestContract;
 		executor.setDeployer(deployer);

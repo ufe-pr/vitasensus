@@ -1,7 +1,7 @@
 import { useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Block } from '../components/Block';
-import { ProfileSettingsBlock } from '../components/ProfileSettingsBlock';
+import { ProfileDetailsSettingsBlock } from '../components/ProfileDetailsSettingsBlock';
 import { useClient } from '../hooks/client';
 import { connect } from '../utils/globalContext';
 import { SpacesContext } from '../utils/SpacesContext';
@@ -34,7 +34,7 @@ const CreateSpace = () => {
 		<div className="flex flex-wrap lg:flex-nowrap gap-4">
 			<div className="order-2 w-full lg:order-none lg:w-8/12 space-y-3 md:space-y-6">
 				<h1>Create a space</h1>
-				<ProfileSettingsBlock onSubmit={createSpace} />
+				<ProfileDetailsSettingsBlock onSubmit={createSpace} />
 			</div>
 			<div className="w-full order-1 lg:order-none lg:w-4/12 mb-4 lg:mb-0">
 				<Block className="text-skin-muted">

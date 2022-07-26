@@ -18,12 +18,12 @@ export function useVotes(
 		if (resultsEnd) return;
 		if ((votes?.length ?? 0) >= count) return;
 
-		console.log('get votes', spaceId, proposalId);
+		
 
 		client
 			.getVotes(spaceId, proposalId, { skip: votes?.length! })
 			.then((results) => {
-				console.log('get votes results', spaceId, proposalId, results);
+				
 
 				if (results.length === 0) {
 					setResultsEnd(true);

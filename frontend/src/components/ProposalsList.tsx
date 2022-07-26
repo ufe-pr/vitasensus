@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useProposals } from '../hooks/proposal';
 import { useCurrentSpace } from '../hooks/space';
 import { connect } from '../utils/globalContext';
+import { PageLoader } from './Loader';
 import { ProposalListItem } from './ProposalListItem';
 
 const ProposalsList = () => {
@@ -37,21 +38,28 @@ const ProposalsList = () => {
 					{space?.description}
 				</div>
 			)}
-			<div className="my-4 md:space-y-6 lg:space-y-8">
-				{space &&
-					proposals &&
-					proposals.map((proposal) => (
-						<ProposalListItem key={proposal.id} proposal={proposal} space={space} />
-					))}
-				{(proposals?.length ?? 0) >= maxProposalCount && (
-					<div
-						ref={(ref) => (loadingRef.current = ref || undefined)}
-						style={{ height: '100px', margin: '30px' }}
-					>
-						<span>Loading...</span>
+			{!proposals && <PageLoader />}
+			{proposals &&
+				(proposals.length ? (
+					<div className="my-4 md:space-y-6 lg:space-y-8">
+						{space &&
+							proposals.map((proposal) => (
+								<ProposalListItem key={proposal.id} proposal={proposal} space={space} />
+							))}
+						{(proposals?.length ?? 0) >= maxProposalCount && (
+							<div
+								ref={(ref) => (loadingRef.current = ref || undefined)}
+								style={{ height: '100px', margin: '30px' }}
+							>
+								<span>Loading...</span>
+							</div>
+						)}
 					</div>
-				)}
-			</div>
+				) : (
+					<div className="my-4">
+						<p>There are no proposals at this time.</p>
+					</div>
+				))}
 		</>
 	);
 };

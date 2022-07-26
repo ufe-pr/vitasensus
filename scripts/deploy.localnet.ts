@@ -6,7 +6,6 @@ async function run(): Promise<void> {
 	const provider = vuilder.newProvider(config.http);
 	console.log(await provider.request('ledger_getSnapshotChainHeight'));
 	const deployer = vuilder.newAccount(config.mnemonic, 0, provider);
-	console.log(deployer);
 
 	// compile
 	const compiledContracts = await vuilder.compile('Vitasensus.solpp');

@@ -19,6 +19,7 @@ import CreateSpace from '../pages/CreateSpace';
 import SpaceCreateProposal from '../components/SpaceCreateProposal';
 import { confirmCallContract, getPastEvents } from '../utils/viteScripts';
 import { SpacesContextProvider } from '../utils/SpacesContext';
+import SpaceProfile from '../components/SpaceProfile';
 
 const providerWsURLs = {
 	...(PROD ? {} : { localnet: process.env.REACT_APP_LOCAL_NETWORK || 'ws://localhost:23457' }),
@@ -45,7 +46,7 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 
 	const viteApi = useMemo(() => {
 		return new ViteAPI(rpc, () => {
-			// console.log('client connected');
+			// 
 		});
 	}, [rpc]);
 
@@ -73,7 +74,7 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 					setState({ viteBalanceInfo: res });
 				})
 				.catch((e) => {
-					console.log(e);
+					
 					setState({ toast: JSON.stringify(e), vcInstance: null });
 					localStorage.removeItem(VCSessionKey);
 					// Sometimes on page load, this will catch with
@@ -157,7 +158,6 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 				address: toAddress,
 				data: dataBase64,
 			});
-			console.log('queryContract result: ', result);
 
 			// parse result
 			if (result) {
@@ -196,7 +196,6 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 		setState({ scanEvents });
 	}, [setState, scanEvents]);
 
-	console.log('ViteBalanceInfo: ', viteBalanceInfo);
 
 	return (
 		<BrowserRouter>
@@ -220,6 +219,14 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 								element={
 									<SingleSpace>
 										<SpaceCreateProposal />
+									</SingleSpace>
+								}
+							/>
+							<Route
+								path="edit"
+								element={
+									<SingleSpace>
+										<SpaceProfile />
 									</SingleSpace>
 								}
 							/>

@@ -87,3 +87,8 @@ export interface DetailedSpace extends Space {
 	description?: string;
 	website?: string;
 }
+
+export interface SpaceSettings {
+	createProposalThreshold: number;
+	onlyAdminsCanCreateProposal: boolean;
+}

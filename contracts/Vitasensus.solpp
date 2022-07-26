@@ -16,13 +16,14 @@ contract Vitasensus {
 		bytes32 avatar,
 		string description
 	);
-	event SpaceNameUpdated(uint256 indexed id, bytes32 from, bytes32 to);
-	event SpaceDescriptionUpdated(uint256 indexed id, bytes32 from, bytes32 to);
-	event SpaceAvatarUpdated(uint256 indexed id, bytes32 from, bytes32 to);
-	event SpaceTokenUpdated(uint256 indexed id, vitetoken indexed from, vitetoken indexed to);
-	event SpaceWebsiteUpdated(uint256 indexed id, bytes32 from, bytes32 to);
-	event SpaceAdminAdded(uint256 indexed id, address admin);
-	event SpaceAdminRemoved(uint256 indexed id, address admin);
+	event SpaceUpdated(
+		uint256 indexed id,
+		bytes32 name,
+		string description,
+		vitetoken token,
+		bytes32 avatar,
+		bytes32 website
+	);
 	event SpaceOwnershipTransferred(uint256 indexed id, address indexed from, address indexed to);
 
 	event JoinedSpace(uint256 indexed spaceId, address indexed user);
@@ -58,6 +59,11 @@ contract Vitasensus {
 		uint256 tokenDecimals;
 	}
 
+	struct SpaceSettings {
+		uint256 createProposalThreshold;
+		bool onlyAdminsCanCreateProposals;
+	}
+
 	struct Proposal {
 		string body;
 		string title;
@@ -79,10 +85,12 @@ contract Vitasensus {
 
 	// State
 	Space[] private _spaces;
+	SpaceSettings[] private _spaceSettings;
 	mapping(uint256 => Proposal[]) private _spacesProposals;
 
 	mapping(uint256 => IterableMapping.Map) private _spacesMembers;
-	mapping(uint256 => IterableMapping.Map) private _spacesAdmins;
+	mapping(uint256 => address[]) private _spacesAdmins;
+	mapping(uint256 => mapping(address => bool)) private _spacesIsAdmin;
 	mapping(address => UintKeyedIterableMapping.Map) private _userSpaces;
 	mapping(uint256 => address) private _spacesOwners;
 
@@ -92,53 +100,85 @@ contract Vitasensus {
 	// Modifier declarations
 
 	// Access modifiers
-	modifier requireSpaceOwner(uint256 spaceId) {
+	function _requireSpaceOwner(uint256 spaceId) private view {
 		require(isSpaceOwner(spaceId, msg.sender));
+	}
+
+	modifier requireSpaceOwner(uint256 spaceId) {
+		_requireSpaceOwner(spaceId);
 		_;
+	}
+
+	function _requireSpaceAdmin(uint256 spaceId) private view {
+		require(isSpaceAdmin(spaceId, msg.sender) || isSpaceOwner(spaceId, msg.sender));
 	}
 
 	modifier requireSpaceAdmin(uint256 spaceId) {
-		require(isSpaceAdmin(spaceId, msg.sender) || isSpaceOwner(spaceId, msg.sender));
+		_requireSpaceAdmin(spaceId);
 		_;
 	}
 
-	modifier requireSpaceMember(uint256 spaceId) {
+	function _requireSpaceMember(uint256 spaceId) private view {
 		require(
 			isSpaceMember(spaceId, msg.sender) ||
 				isSpaceAdmin(spaceId, msg.sender) ||
 				isSpaceOwner(spaceId, msg.sender)
 		);
+	}
+	
+	modifier requireSpaceMember(uint256 spaceId) {
+		_requireSpaceMember(spaceId);
 		_;
+	}
+
+	function _requireNotSpaceMember(uint256 spaceId) private view {
+		require(!isSpaceMember(spaceId, msg.sender));
 	}
 
 	modifier requireNotSpaceMember(uint256 spaceId) {
-		require(!isSpaceMember(spaceId, msg.sender));
+		_requireNotSpaceMember(spaceId);
 		_;
 	}
 
-	modifier requireProposalActive(uint256 spaceId, uint256 proposalId) {
+	function _requireProposalActive(uint256 spaceId, uint256 proposalId) private view {
 		require(_isProposalActive(spaceId, proposalId));
+	}
+
+	function _requireProposalClosed(uint256 spaceId, uint256 proposalId) private view {
+		require(isProposalClosed(spaceId, proposalId));
+	}
+
+	function _requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) private view {
+		require(!isProposalExecuted(spaceId, proposalId));
+	}
+
+	function _requireSpaceToken(uint256 spaceId) private view {
+		require(msg.token == _spaces[spaceId].token);
+	}
+
+	modifier requireProposalActive(uint256 spaceId, uint256 proposalId) {
+		_requireProposalActive(spaceId, proposalId);
 		_;
 	}
 
 	modifier requireProposalClosed(uint256 spaceId, uint256 proposalId) {
-		require(isProposalClosed(spaceId, proposalId));
+		_requireProposalClosed(spaceId, proposalId);
 		_;
 	}
 
 	modifier requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) {
-		require(!isProposalExecuted(spaceId, proposalId));
+		_requireProposalNotExecuted(spaceId, proposalId);
 		_;
 	}
 
 	modifier requireSpaceToken(uint256 spaceId) {
-		require(msg.token == getSpaceToken(spaceId));
+		_requireSpaceToken(spaceId);
 		_;
 	}
 
 	// Function declarations
 
-	function sum(uint256[] memory xs) internal pure returns (uint256) {
+	function sum(uint256[] memory xs) private pure returns (uint256) {
 		uint256 sum_ = 0;
 		for (uint256 index = 0; index < xs.length; index++) {
 			sum_ += xs[index];
@@ -152,7 +192,7 @@ contract Vitasensus {
 	}
 
 	function isSpaceAdmin(uint256 spaceId, address user) public view returns (bool) {
-		return _spacesAdmins[spaceId].get(user) == 1;
+		return _spacesIsAdmin[spaceId][user] || isSpaceOwner(spaceId, user);
 	}
 
 	function isSpaceOwner(uint256 spaceId, address user) public view returns (bool) {
@@ -177,10 +217,6 @@ contract Vitasensus {
 		return _getProposal(spaceId, proposalId).state == ProposalState.Closed;
 	}
 
-	function getSpaceToken(uint256 spaceId) public view returns (vitetoken) {
-		return _spaces[spaceId].token;
-	}
-
 	function _getProposal(uint256 spaceId, uint256 proposalId)
 		internal
 		view
@@ -191,8 +227,8 @@ contract Vitasensus {
 
 	// Proposal execution
 
-	function _getWinningChoice(uint256 spaceId, uint256 proposalId)
-		internal
+	function getWinningChoiceIndex(uint256 spaceId, uint256 proposalId)
+		public
 		view
 		returns (uint256)
 	{
@@ -205,10 +241,6 @@ contract Vitasensus {
 			}
 		}
 		return maxIndex;
-	}
-
-	function getWinningChoiceIndex(uint256 spaceId, uint256 proposalId) public view returns (uint256) {
-		return _getWinningChoice(spaceId, proposalId);
 	}
 
 	function _execute(address addr, bytes32 data) internal {
@@ -232,11 +264,11 @@ contract Vitasensus {
 	}
 
 	function executeProposal(uint256 spaceId, uint256 proposalId)
-		public
+		external
 		requireProposalClosed(spaceId, proposalId)
 		requireProposalNotExecuted(spaceId, proposalId)
 	{
-		uint256 winningChoiceIndex = _getWinningChoice(spaceId, proposalId);
+		uint256 winningChoiceIndex = getWinningChoiceIndex(spaceId, proposalId);
 		_executeProposal(spaceId, proposalId, winningChoiceIndex);
 	}
 
@@ -247,7 +279,7 @@ contract Vitasensus {
 		uint256 proposalId,
 		uint256[] memory votes
 	)
-		public
+		external
 		payable
 		requireSpaceMember(spaceId)
 		requireSpaceToken(spaceId)
@@ -277,7 +309,7 @@ contract Vitasensus {
 		uint256 spaceId,
 		uint256 proposalId,
 		address voter
-	) public requireProposalClosed(spaceId, proposalId) {
+	) external requireProposalClosed(spaceId, proposalId) {
 		Vote storage vote = _spacesProposalsVotes[spaceId][proposalId][voter];
 		require(!vote.redeemed);
 		if (vote.votes.length == 0) {
@@ -286,7 +318,7 @@ contract Vitasensus {
 		uint256 multiplier = 10**_spaces[spaceId].tokenDecimals;
 		uint256 total = sum(vote.votes) * multiplier;
 		vote.redeemed = true;
-		payable(voter).transfer(getSpaceToken(spaceId), total);
+		payable(voter).transfer(_spaces[spaceId].token, total);
 	}
 
 	function createProposal(
@@ -298,7 +330,16 @@ contract Vitasensus {
 		bytes32[] memory choices,
 		address[] memory choicesExecutors,
 		bytes32[] memory choicesData
-	) public requireSpaceMember(spaceId) {
+	) external payable requireSpaceMember(spaceId) {
+		SpaceSettings storage spaceSettings = _spaceSettings[spaceId];
+		bool isAdmin = isSpaceAdmin(spaceId, msg.sender);
+		if (spaceSettings.onlyAdminsCanCreateProposals) {
+			require(isAdmin);
+		} 
+		require(isAdmin ||
+			msg.value ==
+				spaceSettings.createProposalThreshold * 10**_spaces[spaceId].tokenDecimals
+		);
 		require(startTime < endTime && endTime > block.timestamp);
 		require(startTime == 0 || startTime >= block.timestamp);
 		require(spaceId < _spaces.length);
@@ -336,8 +377,8 @@ contract Vitasensus {
 		emit JoinedSpace(spaceId, msg.sender);
 	}
 
-	function leaveSpace(uint256 spaceId) public {
-		require(isSpaceMember(spaceId, msg.sender));
+	function leaveSpace(uint256 spaceId) external {
+		// require(isSpaceMember(spaceId, msg.sender));
 		_spacesMembers[spaceId].remove(msg.sender);
 		_userSpaces[msg.sender].remove(spaceId);
 		emit LeftSpace(spaceId, msg.sender);
@@ -352,22 +393,24 @@ contract Vitasensus {
 
 	// transfer ownership
 	function transferSpaceOwnership(uint256 spaceId, address newOwner)
-		public
+		external
 		requireSpaceOwner(spaceId)
 	{
 		_transferSpaceOwnership(spaceId, newOwner);
 	}
 
-	// add space admin
-	function addSpaceAdmin(uint256 spaceId, address newAdmin) public requireSpaceOwner(spaceId) {
-		_spacesAdmins[spaceId].set(newAdmin, 1);
-		emit SpaceAdminAdded(spaceId, newAdmin);
-	}
-
-	// remove space admin
-	function removeSpaceAdmin(uint256 spaceId, address admin) public requireSpaceOwner(spaceId) {
-		_spacesAdmins[spaceId].remove(admin);
-		emit SpaceAdminRemoved(spaceId, admin);
+	// Update space admins
+	function setSpaceAdmins(uint256 spaceId, address[] memory newAdmins)
+		external
+		requireSpaceOwner(spaceId)
+	{
+		for (uint256 index = 0; index < _spacesAdmins[spaceId].length; index++) {
+			_spacesIsAdmin[spaceId][_spacesAdmins[spaceId][index]] = false;
+		}
+		for (uint256 index = 0; index < newAdmins.length; index++) {
+			_spacesIsAdmin[spaceId][newAdmins[index]] = true;
+		}
+		_spacesAdmins[spaceId] = newAdmins;
 	}
 
 	// Create a space
@@ -378,7 +421,7 @@ contract Vitasensus {
 		bytes32 avatar,
 		bytes32 website,
 		uint256 spaceTokenDecimals
-	) public {
+	) external {
 		uint256 spaceId = _spaces.length;
 		Space memory space;
 		space.name = name;
@@ -389,11 +432,49 @@ contract Vitasensus {
 		space.tokenDecimals = spaceTokenDecimals;
 
 		_spaces.push(space);
+		_spaceSettings.push();
 
 		emit SpaceCreated(spaceId, spaceToken, name, avatar, description);
 		joinSpace(spaceId);
 		_transferSpaceOwnership(spaceId, msg.sender);
-		addSpaceAdmin(spaceId, msg.sender);
+	}
+
+	// Update a space
+	function updateSpace(
+		uint256 spaceId,
+		bytes32 name,
+		string memory description,
+		vitetoken spaceToken,
+		uint256 spaceTokenDecimals,
+		bytes32 avatar,
+		bytes32 website
+	) public requireSpaceAdmin(spaceId) {
+		Space storage space = _spaces[spaceId];
+		space.name = name;
+		space.description = description;
+		space.token = spaceToken;
+		space.tokenDecimals = spaceTokenDecimals;
+		space.avatar = avatar;
+		space.website = website;
+		emit SpaceUpdated(
+			spaceId,
+			space.name,
+			space.description,
+			space.token,
+			space.avatar,
+			space.website
+		);
+	}
+
+	// Update space create proposal threshold
+	function updateSpaceCreateProposalThreshold(
+		uint256 spaceId,
+		uint256 threshold,
+		bool adminCreateProposal
+	) public requireSpaceAdmin(spaceId) {
+		SpaceSettings storage spaceSettings = _spaceSettings[spaceId];
+		spaceSettings.createProposalThreshold = threshold;
+		spaceSettings.onlyAdminsCanCreateProposals = adminCreateProposal;
 	}
 
 	// Item getters
@@ -410,27 +491,31 @@ contract Vitasensus {
 		return _spacesProposals[spaceId].length;
 	}
 
-	function getSpaceProposalVotesCount(uint256 spaceId, uint256 proposalId) public view returns (uint256) {
+	function getSpaceProposalVotesCount(uint256 spaceId, uint256 proposalId)
+		public
+		view
+		returns (uint256)
+	{
 		return _spacesProposalsVoters[spaceId][proposalId].length;
 	}
 
-	function getSpaceMembers(
-		uint256 spaceId,
-		uint256 skip,
-		uint256 limit
-	) public view returns (address[] memory members_) {
-		if (skip < _spacesMembers[spaceId].size()) {
-			uint256 length = (_spaces.length - skip) > limit ? limit : _spaces.length - skip;
-			members_ = new address[](length);
-			for (
-				uint256 index = skip;
-				index < _spacesMembers[spaceId].size() && index < (skip + limit);
-				index++
-			) {
-				members_[index - skip] = (_spacesMembers[spaceId].keys[index]);
-			}
-		}
-	}
+	// function getSpaceMembers(
+	// 	uint256 spaceId,
+	// 	uint256 skip,
+	// 	uint256 limit
+	// ) public view returns (address[] memory members_) {
+	// 	if (skip < _spacesMembers[spaceId].size()) {
+	// 		uint256 length = (_spaces.length - skip) > limit ? limit : _spaces.length - skip;
+	// 		members_ = new address[](length);
+	// 		for (
+	// 			uint256 index = skip;
+	// 			index < _spacesMembers[spaceId].size() && index < (skip + limit);
+	// 			index++
+	// 		) {
+	// 			members_[index - skip] = (_spacesMembers[spaceId].keys[index]);
+	// 		}
+	// 	}
+	// }
 
 	function getUserSpaces(address user)
 		public
@@ -454,7 +539,7 @@ contract Vitasensus {
 	}
 
 	function getSpaceAdmins(uint256 spaceId) public view returns (address[] memory) {
-		return _spacesAdmins[spaceId].keys;
+		return _spacesAdmins[spaceId];
 	}
 
 	// get space owner
@@ -485,6 +570,16 @@ contract Vitasensus {
 			_spacesMembers[spaceId].size(),
 			_spaces[spaceId].tokenDecimals
 		);
+	}
+
+	// get space settings
+	function getSpaceSettings(uint256 spaceId)
+		public
+		view
+		returns (uint256 proposalThreshold, bool onlyAdminCreateProposal)
+	{
+		SpaceSettings storage settings = _spaceSettings[spaceId];
+		return (settings.createProposalThreshold, settings.onlyAdminsCanCreateProposals);
 	}
 
 	// get spaces
@@ -576,15 +671,6 @@ contract Vitasensus {
 			proposal.choicesData,
 			proposal.votes
 		);
-	}
-
-	// get space proposal choices
-	function getSpaceProposalChoices(uint256 spaceId, uint256 proposalId)
-		public
-		view
-		returns (bytes32[] memory choices)
-	{
-		return _spacesProposals[spaceId][proposalId].choices;
 	}
 
 	// get space proposal votes

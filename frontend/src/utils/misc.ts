@@ -34,18 +34,22 @@ export async function waitFor(
 	pollInterval: number = 1000,
 	retries: number = 5
 ) {
-	const poll = (resolve: any) => {
+	const poll = (resolve: any, reject: any) => {
 		retries--;
 		conditionFn()
 			.then((result) => {
 				if (result) {
 					resolve();
 				} else {
-					retries && setTimeout(() => poll(resolve), pollInterval);
+					retries
+						? setTimeout(() => poll(resolve, reject), pollInterval)
+						: reject('condition failed: timeout');
 				}
 			})
 			.catch(() => {
-				retries && setTimeout(() => poll(resolve), pollInterval);
+				retries
+					? setTimeout(() => poll(resolve, reject), pollInterval)
+					: reject('condition failed: timeout');
 			});
 	};
 	return new Promise(poll);
