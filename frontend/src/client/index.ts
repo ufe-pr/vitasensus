@@ -504,7 +504,11 @@ export class SensusClient {
 				actions.map((action) => action.data.padEnd(64, '0')),
 			],
 			space?.token.id,
-			isAdmin ? '0' : spaceSettings.createProposalThreshold.toFixed(0)
+			isAdmin ? '0' : new BigNumber(spaceSettings.createProposalThreshold)
+
+				.multipliedBy(Math.pow(10, this._cachedSpaces[spaceId].token.decimals))
+
+				.toString()
 		)) as any;
 
 		const events: any[] = (await this.scanEvents(
