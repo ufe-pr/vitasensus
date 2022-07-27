@@ -73,14 +73,8 @@ const PageContainer = ({
 					{children}
 				</main>
 				<div className="fx justify-center gap-2 mx-4 my-3 text-skin-muted">
-					<A href="https://twitter.com/vitelabs" className="brightness-button">
-						Twitter
-					</A>
-					<A href="https://github.com/vitelabs/vite-express" className="brightness-button">
+					<A href={process.env.REACT_APP_GITHUB_URL} className="brightness-button">
 						GitHub
-					</A>
-					<A href="https://discord.gg/AEnScAQA" className="brightness-button">
-						Discord
 					</A>
 				</div>
 			</div>
