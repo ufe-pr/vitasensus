@@ -330,14 +330,14 @@ contract Vitasensus {
 		bytes32[] memory choices,
 		address[] memory choicesExecutors,
 		bytes32[] memory choicesData
-	) external payable requireSpaceMember(spaceId) {
+	) external payable requireSpaceMember(spaceId) requireSpaceToken(spaceId) {
 		SpaceSettings storage spaceSettings = _spaceSettings[spaceId];
 		bool isAdmin = isSpaceAdmin(spaceId, msg.sender);
 		if (spaceSettings.onlyAdminsCanCreateProposals) {
 			require(isAdmin);
-		} 
+		}
 		require(isAdmin ||
-			msg.value ==
+			msg.value >=
 				spaceSettings.createProposalThreshold * 10**_spaces[spaceId].tokenDecimals
 		);
 		require(startTime < endTime && endTime > block.timestamp);
@@ -369,6 +369,9 @@ contract Vitasensus {
 			proposal.startTime,
 			proposal.endTime
 		);
+
+		// Refund msg value
+		payable(msg.sender).transfer(msg.token, msg.value);
 	}
 
 	function joinSpace(uint256 spaceId) public requireNotSpaceMember(spaceId) {

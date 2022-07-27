@@ -102,7 +102,7 @@ export async function confirmCallContract(provider: any, block: any) {
 			return isReceived(provider, block.hash);
 		},
 		1000,
-		10
+		60
 	);
 
 	const sendBlock = await getAccountBlock(provider, block.hash);

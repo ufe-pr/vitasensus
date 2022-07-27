@@ -474,11 +474,11 @@ export class SensusClient {
 		choices,
 		description,
 		end,
-		space,
+		spaceId,
 		start,
 		title,
 	}: {
-		space: number;
+		spaceId: number;
 		title: string;
 		description: string;
 		choices: string[];
@@ -487,16 +487,25 @@ export class SensusClient {
 		start: number;
 		link?: string;
 	}): Promise<Proposal> {
-		const result = (await this.callContract(VitasensusContract, 'createProposal', [
-			space,
-			title,
-			description,
-			start,
-			end,
-			choices.map((choice) => encodeStringToBytes32(choice)),
-			actions.map((action) => action.executor),
-			actions.map((action) => action.data.padEnd(64, '0')),
-		])) as any;
+		const space = await this.getSpace(spaceId);
+		const spaceSettings = await this.getSpaceSettings(spaceId);
+		const isAdmin = await this.isSpaceAdmin(spaceId);
+		const result = (await this.callContract(
+			VitasensusContract,
+			'createProposal',
+			[
+				spaceId,
+				title,
+				description,
+				start,
+				end,
+				choices.map((choice) => encodeStringToBytes32(choice)),
+				actions.map((action) => action.executor),
+				actions.map((action) => action.data.padEnd(64, '0')),
+			],
+			space?.token.id,
+			isAdmin ? '0' : spaceSettings.createProposalThreshold.toFixed(0)
+		)) as any;
 
 		const events: any[] = (await this.scanEvents(
 			VitasensusContract,
@@ -506,7 +515,7 @@ export class SensusClient {
 
 		const event = events[events.length - 1] as any;
 		const proposalId = event.returnValues.id;
-		const proposal = await this.getProposal(space, Number.parseInt(proposalId));
+		const proposal = await this.getProposal(spaceId, Number.parseInt(proposalId));
 
 		return proposal!;
 	}

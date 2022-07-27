@@ -71,7 +71,7 @@ export const SpaceCreateProposal = () => {
 				actions,
 				description,
 				title,
-				space: spaceId,
+				spaceId: spaceId,
 				end: Math.floor(endDate.valueOf() / 1000),
 				start: !startDate ? 0 : Math.floor(startDate.valueOf() / 1000),
 			});
@@ -145,7 +145,7 @@ export const SpaceCreateProposal = () => {
 				batches={actions}
 				setBatches={setActions}
 			/>
-			{settings && settings !== '404' && settings.createProposalThreshold > 0 && (
+			{!isSpaceAdmin && settings && settings !== '404' && settings.createProposalThreshold > 0 && (
 				<div className="">
 					<p>
 						The amount of {settings.createProposalThreshold} {space.token.symbol} will be charged
