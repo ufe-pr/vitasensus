@@ -1,4 +1,4 @@
-import { LogoutIcon } from '@heroicons/react/outline';
+import { LoginIcon, LogoutIcon } from '@heroicons/react/outline';
 import { ReactNode, useEffect, useState } from 'react';
 import DropdownButton from '../components/DropdownButton';
 import Modal from '../components/Modal';
@@ -51,7 +51,10 @@ const ViteConnectButton = ({ setState, i18n, vcInstance }: Props) => {
 					});
 				}}
 			>
-				<p>{i18n.connectWallet}</p>
+				<span className="md:hidden">
+					<LoginIcon className="h-5 mirr" />
+				</span>
+				<p className="hidden md:inline-block">{i18n.connectWallet}</p>
 			</button>
 			{!!connectURI && (
 				<Modal onClose={() => connectURISet('')}>

@@ -5,6 +5,7 @@ import {
 	MoonIcon,
 	DesktopComputerIcon,
 	PlusIcon,
+	DotsVerticalIcon,
 } from '@heroicons/react/outline';
 import A from '../components/A';
 import { NetworkTypes, State } from '../utils/types';
@@ -16,6 +17,8 @@ import { PROD } from '../utils/constants';
 import DropdownButton from '../components/DropdownButton';
 import { Link } from 'react-router-dom';
 import { SpacesContext } from '../utils/SpacesContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
 
 type Props = State & {
 	noPadding?: boolean;
@@ -49,12 +52,16 @@ const PageContainer = ({
 		['English', 'en'],
 		// ['English', 'en'],
 	];
+	const [sidebarOpen, setSidebarOpen] = useState(false);
 
 	return !i18n ? null : (
 		<div className="flex w-screen overflow-x-hidden relative">
-			<Sidebar />
+			<Sidebar isOpen={sidebarOpen} close={() => setSidebarOpen(false)} />
 			<div className="w-screen md:w-auto h-0 min-h-screen grow shrink-0 relative flex flex-col overflow-y-auto">
-				<header className="fx bg-skin-base border-b-2 border-y-skin-alt px-4 lg:px-8 h-20 justify-between top-0 w-full sticky shrink-0 z-50">
+				<header className="fx bg-skin-base border-b-2 border-y-skin-alt px-4 lg:px-8 h-24 justify-between top-0 w-full sticky shrink-0 z-50 overflow-x-scroll overflow-y-visible">
+					<button className="md:hidden px-2" onClick={() => setSidebarOpen(!sidebarOpen)}>
+						<DotsVerticalIcon className="h-5" />
+					</button>
 					<div className="fx gap-3">
 						<A to="/" className="px-1 h-8 text-xl font-bold">
 							Vitasensus
@@ -74,7 +81,7 @@ const PageContainer = ({
 				</main>
 				<div className="fx justify-center gap-2 mx-4 my-3 text-skin-muted">
 					<A href={process.env.REACT_APP_GITHUB_URL} className="brightness-button">
-						GitHub
+						<FontAwesomeIcon icon={faGithub} /> <span className="ml-2">Github</span>
 					</A>
 				</div>
 			</div>
@@ -113,7 +120,7 @@ function SidebarItem({ avatar, label, href, className }: SidebarItemProps) {
 	);
 }
 
-function Sidebar({ isOpen }: { isOpen?: boolean }) {
+function Sidebar({ isOpen, close }: { isOpen?: boolean; close?: () => void }) {
 	const { userSpaces } = useContext(SpacesContext);
 	// const [_, rebuild] = useState({});
 
@@ -123,6 +130,7 @@ function Sidebar({ isOpen }: { isOpen?: boolean }) {
 				(isOpen ? 'w-16' : 'w-0') +
 				' md:w-20 h-screen grow-0 shrink-0 top-0 sticky border-r border-r-skin-alt py-8 overflow-hidden'
 			}
+			onClick={() => close?.()}
 		>
 			<ul className="flex flex-col gap-y-6">
 				<li>
