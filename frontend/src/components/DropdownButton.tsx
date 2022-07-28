@@ -31,7 +31,7 @@ const DropdownButton = ({ buttonJsx, dropdownJsx, className, containerClassName 
 				{buttonJsx}
 			</button>
 			{open && (
-				<div className="rounded-md shadow-md absolute py-0.5 overflow-hidden top-10 right-0 bg-skin-foreground">
+				<div className="rounded-md shadow-md absolute py-0.5 overflow-auto top-10 right-0 bg-skin-foreground">
 					{dropdownJsx}
 				</div>
 			)}

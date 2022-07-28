@@ -4,9 +4,16 @@ pragma soliditypp >=0.8.0;
 import './IterableMapping.solpp';
 import './VitasensusProposalExecutor.solpp';
 
+interface TokenIssuanceContract {
+    function Burn() external payable;  
+}
+
+
 contract Vitasensus {
 	using IterableMapping for IterableMapping.Map;
 	using UintKeyedIterableMapping for UintKeyedIterableMapping.Map;
+
+	TokenIssuanceContract constant TokenIssuance = TokenIssuanceContract("vite_000000000000000000000000000000000000000595292d996d");
 
 	// Event declarations
 	event SpaceCreated(
@@ -41,7 +48,8 @@ contract Vitasensus {
 	event ProposalVoted(uint256 indexed proposalId, uint256 indexed spaceId, address indexed voter);
 	event ProposalExecuted(uint256 indexed proposalId, uint256 indexed spaceId, uint256 choiceId);
 
-	// Enum declarations
+	vitetoken private constant VITE_TOKEN_ID = "tti_5649544520544f4b454e6e40";
+	uint256 public constant SPACE_CREATION_FEE = 100000 * 10**18;
 
 	enum ProposalState {
 		Active,
@@ -377,14 +385,12 @@ contract Vitasensus {
 	function joinSpace(uint256 spaceId) public requireNotSpaceMember(spaceId) {
 		_spacesMembers[spaceId].set(msg.sender, 1);
 		_userSpaces[msg.sender].set(spaceId, 1);
-		emit JoinedSpace(spaceId, msg.sender);
 	}
 
 	function leaveSpace(uint256 spaceId) external {
-		// require(isSpaceMember(spaceId, msg.sender));
+		require(isSpaceMember(spaceId, msg.sender));
 		_spacesMembers[spaceId].remove(msg.sender);
 		_userSpaces[msg.sender].remove(spaceId);
-		emit LeftSpace(spaceId, msg.sender);
 	}
 
 	// transfer ownership
@@ -424,7 +430,8 @@ contract Vitasensus {
 		bytes32 avatar,
 		bytes32 website,
 		uint256 spaceTokenDecimals
-	) external {
+	) external payable {
+		require(msg.value == SPACE_CREATION_FEE && msg.token == VITE_TOKEN_ID);
 		uint256 spaceId = _spaces.length;
 		Space memory space;
 		space.name = name;
@@ -440,6 +447,7 @@ contract Vitasensus {
 		emit SpaceCreated(spaceId, spaceToken, name, avatar, description);
 		joinSpace(spaceId);
 		_transferSpaceOwnership(spaceId, msg.sender);
+		TokenIssuance.Burn{value: msg.value}();
 	}
 
 	// Update a space

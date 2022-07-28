@@ -15,6 +15,8 @@ import { BigNumber } from 'bignumber.js';
 import { ViteAPI } from '@vite/vitejs/distSrc/viteAPI/type';
 import { getTokenInfo } from '../utils/viteScripts';
 
+const ViteTokenId = 'tti_5649544520544f4b454e6e40';
+
 type PaginationOptions = {
 	first?: number;
 	skip?: number;
@@ -62,6 +64,8 @@ export class SensusClient {
 			this._cachedSpaces[space.id] = space;
 		}
 	}
+
+	readonly spaceCreationFee = new BigNumber(100000 * 10 ** 18);
 
 	private async _cacheSpaceSettings(spaceId: number, spaceSettings: SpaceSettings): Promise<void> {
 		this._cachedSpacesSettings[spaceId] = spaceSettings;
@@ -399,14 +403,22 @@ export class SensusClient {
 		website: string
 	): Promise<any> {
 		await this.loadTokenDetails(spaceToken);
-		const result = (await this.callContract(VitasensusContract, 'createSpace', [
-			encodeStringToBytes32(name),
-			description,
-			spaceToken,
-			encodeStringToBytes32(avatar),
-			encodeStringToBytes32(website),
-			this.getToken(spaceToken).decimals,
-		])) as any;
+		// console.log(this.spaceCreationFee.toFixed(0));
+
+		const result = (await this.callContract(
+			VitasensusContract,
+			'createSpace',
+			[
+				encodeStringToBytes32(name),
+				description,
+				spaceToken,
+				encodeStringToBytes32(avatar),
+				encodeStringToBytes32(website),
+				this.getToken(spaceToken).decimals,
+			],
+			ViteTokenId,
+			this.spaceCreationFee.toFixed(0)
+		)) as any;
 
 		const events: any[] = (await this.scanEvents(
 			VitasensusContract,
@@ -504,11 +516,11 @@ export class SensusClient {
 				actions.map((action) => action.data.padEnd(64, '0')),
 			],
 			space?.token.id,
-			isAdmin ? '0' : new BigNumber(spaceSettings.createProposalThreshold)
-
-				.multipliedBy(Math.pow(10, this._cachedSpaces[spaceId].token.decimals))
-
-				.toString()
+			isAdmin
+				? '0'
+				: new BigNumber(spaceSettings.createProposalThreshold)
+						.multipliedBy(Math.pow(10, this._cachedSpaces[spaceId].token.decimals))
+						.toFixed(0)
 		)) as any;
 
 		const events: any[] = (await this.scanEvents(
@@ -533,7 +545,7 @@ export class SensusClient {
 			this._cachedSpaces[spaceId].token.id,
 			new BigNumber(choiceAmounts.reduce((a, b) => a + b, 0))
 				.multipliedBy(Math.pow(10, this._cachedSpaces[spaceId].token.decimals))
-				.toString()
+				.toFixed(0)
 		);
 	}
 

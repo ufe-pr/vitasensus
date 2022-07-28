@@ -124,15 +124,20 @@ export const ProfileDetailsSettingsBlock = ({
 					/>
 				</div>
 
-				<PrimaryButton disabled={loading}>
-					{loading ? (
-						<>
-							<Loader className="h-6 w-6" /> Loading...
-						</>
-					) : (
-						initialValues ? 'Update space' : 'Create space'
-					)}
-				</PrimaryButton>
+				<div>
+					<p className='text-orange-300 mb-2'>100,000 VITE will be burned to create a space. Do you wish to continue?</p>
+					<PrimaryButton disabled={loading}>
+						{loading ? (
+							<>
+								<Loader className="h-6 w-6" /> Loading...
+							</>
+						) : initialValues ? (
+							'Update space'
+						) : (
+							'Create space'
+						)}
+					</PrimaryButton>
+				</div>
 			</form>
 		</Block>
 	);

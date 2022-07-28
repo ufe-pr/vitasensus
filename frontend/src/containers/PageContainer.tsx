@@ -58,7 +58,7 @@ const PageContainer = ({
 		<div className="flex w-screen overflow-x-hidden relative">
 			<Sidebar isOpen={sidebarOpen} close={() => setSidebarOpen(false)} />
 			<div className="w-screen md:w-auto h-0 min-h-screen grow shrink-0 relative flex flex-col overflow-y-auto">
-				<header className="fx bg-skin-base border-b-2 border-y-skin-alt px-4 lg:px-8 h-24 justify-between top-0 w-full sticky shrink-0 z-50 overflow-x-scroll overflow-y-visible">
+				<header className="fx bg-skin-base border-b-2 border-y-skin-alt px-4 lg:px-8 h-24 justify-between top-0 w-full sticky shrink-0 z-50">
 					<button className="md:hidden px-2" onClick={() => setSidebarOpen(!sidebarOpen)}>
 						<DotsVerticalIcon className="h-5" />
 					</button>
