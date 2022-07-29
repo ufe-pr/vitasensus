@@ -481,6 +481,18 @@ export class SensusClient {
 		return result[0] === '1';
 	}
 
+	async canRedeemSpaceCreationFee(spaceId: number): Promise<boolean> {
+		const result = (await this.queryContract(VitasensusContract, 'canRedeemSpaceCreationFee', [
+			spaceId,
+		])) as any as string[];
+
+		return result[0] === '1';
+	}
+
+	async redeemSpaceCreationFee(spaceId: number): Promise<any> {
+		await this.callContract(VitasensusContract, 'redeemSpaceCreationFee', [spaceId]);
+	}
+
 	async createProposal({
 		actions,
 		choices,

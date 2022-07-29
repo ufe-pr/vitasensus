@@ -125,7 +125,11 @@ export const ProfileDetailsSettingsBlock = ({
 				</div>
 
 				<div>
-					<p className='text-orange-300 mb-2'>100,000 VITE will be burned to create a space. Do you wish to continue?</p>
+					{!initialValues && (
+						<p className="text-orange-300 mb-2">
+							100,000 VITE will be staked to create a space. Do you wish to continue?
+						</p>
+					)}
 					<PrimaryButton disabled={loading}>
 						{loading ? (
 							<>

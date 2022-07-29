@@ -1,8 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ProfileDetailsSettingsBlock } from '../components/ProfileDetailsSettingsBlock';
 import { useClient } from '../hooks/client';
-import { useCurrentSpace, useSpaceSettings } from '../hooks/space';
+import { useCurrentSpace, useRedeemCreationFee, useSpaceSettings } from '../hooks/space';
 import { connect } from '../utils/globalContext';
+import { Block } from './Block';
+import { Loader } from './Loader';
+import { PrimaryButton } from './PrimaryButton';
 import { SpaceAdminSettingsBlock } from './SpaceAdminSettingsBlock';
 import { SpaceThresholdSettingsBlock } from './SpaceThresholdSettingsBlock';
 
@@ -10,6 +13,18 @@ const SpaceProfile = () => {
 	const client = useClient();
 	const space = useCurrentSpace();
 	const settings = useSpaceSettings(space?.id);
+	const { canRedeemFee, redeemFee } = useRedeemCreationFee(space?.id);
+	const [redeemFeeLoading, setRedeemFeeLoading] = useState(false);
+
+	const doRedeemFee = useCallback(async () => {
+		setRedeemFeeLoading(true);
+		try {
+			await redeemFee();
+		} finally {
+			setRedeemFeeLoading(false);
+		}
+	}, [redeemFee]);
+
 	const updateSpace = useCallback(
 		async ({
 			name,
@@ -92,6 +107,19 @@ const SpaceProfile = () => {
 							admins: space.admins,
 						}}
 					/>
+				)}
+				{!canRedeemFee && (
+					<Block title="Redeem creation fee">
+						<PrimaryButton disabled={redeemFeeLoading} onClick={doRedeemFee}>
+							{redeemFeeLoading ? (
+								<>
+									<Loader className="h-6 w-6" /> Loading...
+								</>
+							) : (
+								'Redeem creation fee'
+							)}
+						</PrimaryButton>
+					</Block>
 				)}
 			</div>
 		</>

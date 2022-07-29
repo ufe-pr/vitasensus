@@ -4,16 +4,9 @@ pragma soliditypp >=0.8.0;
 import './IterableMapping.solpp';
 import './VitasensusProposalExecutor.solpp';
 
-interface TokenIssuanceContract {
-    function Burn() external payable;  
-}
-
-
 contract Vitasensus {
 	using IterableMapping for IterableMapping.Map;
 	using UintKeyedIterableMapping for UintKeyedIterableMapping.Map;
-
-	TokenIssuanceContract constant TokenIssuance = TokenIssuanceContract("vite_000000000000000000000000000000000000000595292d996d");
 
 	// Event declarations
 	event SpaceCreated(
@@ -31,7 +24,6 @@ contract Vitasensus {
 		bytes32 avatar,
 		bytes32 website
 	);
-	event SpaceOwnershipTransferred(uint256 indexed id, address indexed from, address indexed to);
 
 	event JoinedSpace(uint256 indexed spaceId, address indexed user);
 	event LeftSpace(uint256 indexed spaceId, address indexed user);
@@ -45,7 +37,6 @@ contract Vitasensus {
 		uint256 startTime,
 		uint256 endTime
 	);
-	event ProposalVoted(uint256 indexed proposalId, uint256 indexed spaceId, address indexed voter);
 	event ProposalExecuted(uint256 indexed proposalId, uint256 indexed spaceId, uint256 choiceId);
 
 	vitetoken private constant VITE_TOKEN_ID = "tti_5649544520544f4b454e6e40";
@@ -65,6 +56,7 @@ contract Vitasensus {
 		string description;
 		vitetoken token;
 		uint256 tokenDecimals;
+		uint256 createdTimestamp;
 	}
 
 	struct SpaceSettings {
@@ -310,7 +302,6 @@ contract Vitasensus {
 			vote.votes[index] += votes[index];
 			proposal.votes[index] += votes[index];
 		}
-		emit ProposalVoted(proposalId, spaceId, msg.sender);
 	}
 
 	function redeemVotedTokens(
@@ -393,21 +384,6 @@ contract Vitasensus {
 		_userSpaces[msg.sender].remove(spaceId);
 	}
 
-	// transfer ownership
-	function _transferSpaceOwnership(uint256 spaceId, address newOwner) internal {
-		address oldOwner = _spacesOwners[spaceId];
-		_spacesOwners[spaceId] = newOwner;
-		emit SpaceOwnershipTransferred(spaceId, oldOwner, newOwner);
-	}
-
-	// transfer ownership
-	function transferSpaceOwnership(uint256 spaceId, address newOwner)
-		external
-		requireSpaceOwner(spaceId)
-	{
-		_transferSpaceOwnership(spaceId, newOwner);
-	}
-
 	// Update space admins
 	function setSpaceAdmins(uint256 spaceId, address[] memory newAdmins)
 		external
@@ -440,14 +416,25 @@ contract Vitasensus {
 		space.avatar = avatar;
 		space.website = website;
 		space.tokenDecimals = spaceTokenDecimals;
+		space.createdTimestamp = block.timestamp;
 
 		_spaces.push(space);
 		_spaceSettings.push();
 
+		_spacesOwners[spaceId] = msg.sender;
 		emit SpaceCreated(spaceId, spaceToken, name, avatar, description);
 		joinSpace(spaceId);
-		_transferSpaceOwnership(spaceId, msg.sender);
-		TokenIssuance.Burn{value: msg.value}();
+	}
+
+	// Redeem space creation fee
+	function redeemSpaceCreationFee(uint256 spaceId) external {
+		require(canRedeemSpaceCreationFee(spaceId));
+		_spaces[spaceId].createdTimestamp = 0;
+		payable(_spacesOwners[spaceId]).transfer(VITE_TOKEN_ID, SPACE_CREATION_FEE);
+	}
+
+	function canRedeemSpaceCreationFee(uint256 spaceId) public view returns (bool) {
+		return _spaces[spaceId].createdTimestamp != 0 && _spaces[spaceId].createdTimestamp + 7776000 < block.timestamp;
 	}
 
 	// Update a space
@@ -459,12 +446,12 @@ contract Vitasensus {
 		uint256 spaceTokenDecimals,
 		bytes32 avatar,
 		bytes32 website
-	) public requireSpaceAdmin(spaceId) {
+	) external requireSpaceAdmin(spaceId) {
 		Space storage space = _spaces[spaceId];
 		space.name = name;
 		space.description = description;
 		space.token = spaceToken;
-		space.tokenDecimals = spaceTokenDecimals;
+		space.tokenDecimals = uint8(spaceTokenDecimals);
 		space.avatar = avatar;
 		space.website = website;
 		emit SpaceUpdated(
@@ -482,7 +469,7 @@ contract Vitasensus {
 		uint256 spaceId,
 		uint256 threshold,
 		bool adminCreateProposal
-	) public requireSpaceAdmin(spaceId) {
+	) external requireSpaceAdmin(spaceId) {
 		SpaceSettings storage spaceSettings = _spaceSettings[spaceId];
 		spaceSettings.createProposalThreshold = threshold;
 		spaceSettings.onlyAdminsCanCreateProposals = adminCreateProposal;
@@ -490,20 +477,16 @@ contract Vitasensus {
 
 	// Item getters
 
-	function getSpacesCount() public view returns (uint256) {
+	function getSpacesCount() external view returns (uint256) {
 		return _spaces.length;
 	}
 
-	function getSpaceMembersCount(uint256 spaceId) public view returns (uint256) {
-		return _spacesMembers[spaceId].size();
-	}
-
-	function getSpaceProposalsCount(uint256 spaceId) public view returns (uint256) {
+	function getSpaceProposalsCount(uint256 spaceId) external view returns (uint256) {
 		return _spacesProposals[spaceId].length;
 	}
 
 	function getSpaceProposalVotesCount(uint256 spaceId, uint256 proposalId)
-		public
+		external
 		view
 		returns (uint256)
 	{
@@ -529,7 +512,7 @@ contract Vitasensus {
 	// }
 
 	function getUserSpaces(address user)
-		public
+		external
 		view
 		returns (
 			uint256[] memory spaceIds,
@@ -549,7 +532,7 @@ contract Vitasensus {
 		}
 	}
 
-	function getSpaceAdmins(uint256 spaceId) public view returns (address[] memory) {
+	function getSpaceAdmins(uint256 spaceId) external view returns (address[] memory) {
 		return _spacesAdmins[spaceId];
 	}
 
@@ -560,7 +543,7 @@ contract Vitasensus {
 
 	// get space
 	function getSpaceExternal(uint256 spaceId)
-		public
+		external
 		view
 		returns (
 			bytes32 name,
@@ -585,7 +568,7 @@ contract Vitasensus {
 
 	// get space settings
 	function getSpaceSettings(uint256 spaceId)
-		public
+		external
 		view
 		returns (uint256 proposalThreshold, bool onlyAdminCreateProposal)
 	{
@@ -595,7 +578,7 @@ contract Vitasensus {
 
 	// get spaces
 	function getSpaces(uint256 skip, uint256 limit)
-		public
+		external
 		view
 		returns (
 			bytes32[] memory names,
@@ -629,7 +612,7 @@ contract Vitasensus {
 		uint256 skip,
 		uint256 limit
 	)
-		public
+		external
 		view
 		returns (
 			uint256[] memory proposalIds,
@@ -656,7 +639,7 @@ contract Vitasensus {
 
 	// get space proposal
 	function getSpaceProposal(uint256 spaceId, uint256 proposalId)
-		public
+		external
 		view
 		returns (
 			string memory title,
@@ -690,7 +673,7 @@ contract Vitasensus {
 		uint256 proposalId,
 		uint256 skip,
 		uint256 limit
-	) public view returns (address[] memory voters, uint256[][] memory votes) {
+	) external view returns (address[] memory voters, uint256[][] memory votes) {
 		if (skip < _spacesProposalsVoters[spaceId][proposalId].length) {
 			uint256 length = (_spacesProposalsVoters[spaceId][proposalId].length - skip) > limit
 				? limit

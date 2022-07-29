@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DetailedSpace, Space, SpaceSettings } from '../client/types';
 import { SpacesContext } from '../utils/SpacesContext';
@@ -109,15 +109,41 @@ export function useIsSpaceAdmin(id?: number): boolean {
 	return isAdmin;
 }
 
+export function useRedeemCreationFee(id?: number) {
+	const client = useClient();
+	const [canRedeemFee, setCanRedeemFee] = useState(false);
+
+	useEffect(() => {
+		setCanRedeemFee(false);
+	}, [client, id]);
+
+	useEffect(() => {
+		id !== null &&
+			id !== undefined &&
+			client
+				.canRedeemSpaceCreationFee(id)
+				.then(
+					(canRedeem) => canRedeem,
+					(e) => false
+				)
+				.then((canRedeem) => setCanRedeemFee(canRedeem));
+	}, [client, id]);
+
+	const redeemFee = useCallback(async () => {
+		if (!id) return;
+		await client.redeemSpaceCreationFee(id);
+		setCanRedeemFee(false);
+	}, [client, id]);
+
+	return { canRedeemFee, redeemFee };
+}
+
 export function useUserInSpace(spaceId?: number): boolean {
 	const { userSpaces } = useContext(SpacesContext);
 	const joined = useMemo(
 		() => spaceId !== null && spaceId !== undefined && !!userSpaces.find((s) => s.id === spaceId),
 		[spaceId, userSpaces]
 	);
-
-	
-	
 
 	return joined;
 }

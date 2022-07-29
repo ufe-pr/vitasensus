@@ -18,10 +18,10 @@ import { useVotes } from '../hooks/vote';
 import { connect } from '../utils/globalContext';
 import { formatDate } from '../utils/strings';
 
-const RightSidebar = ({ proposal }: { proposal: Proposal; space: DetailedSpace }) => {
+const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: DetailedSpace }) => {
 	const startDate = new Date(proposal.start * 1000);
 	const endDate = new Date(proposal.end * 1000);
-	const [loading, setLoading] = useState(false);
+	const [redeemTokensLoading, setRedeemTokensLoading] = useState(false);
 	const [executeProposalLoading, setExecuteProposalLoading] = useState(false);
 	const [executedProposal, setExecutedProposal] = useState(true);
 	const client = useClient();
@@ -43,11 +43,11 @@ const RightSidebar = ({ proposal }: { proposal: Proposal; space: DetailedSpace }
 	}, [client, proposal.id, proposal.spaceId]);
 
 	const redeemTokens = useCallback(async () => {
-		setLoading(true);
+		setRedeemTokensLoading(true);
 		try {
 			await client.redeemTokens(proposal.spaceId, proposal.id);
 		} finally {
-			setLoading(false);
+			setRedeemTokensLoading(false);
 		}
 	}, [client, proposal.id, proposal.spaceId]);
 
@@ -60,10 +60,10 @@ const RightSidebar = ({ proposal }: { proposal: Proposal; space: DetailedSpace }
 					<SidebarTile label="End date" value={formatDate(endDate) ?? ''} />
 				</div>
 			</Block>
-			<SpaceProposalResults proposal={proposal} />
+			<SpaceProposalResults proposal={proposal} space={space} />
 			{proposal.state === ProposalState.closed && (
-				<PrimaryButton className="" disabled={loading} onClick={redeemTokens}>
-					{loading ? (
+				<PrimaryButton className="" disabled={redeemTokensLoading} onClick={redeemTokens}>
+					{redeemTokensLoading ? (
 						<>
 							<Loader /> Loading...
 						</>
@@ -170,7 +170,6 @@ const SingleProposal = () => {
 	const { spaceId, proposalId } = useParams();
 	const space = useSpace(Number.parseInt(spaceId ?? '') ?? '');
 	const proposal = useProposal(Number.parseInt(spaceId ?? ''), Number.parseInt(proposalId ?? ''));
-	
 
 	if (!proposal || !space || space === '404' || proposal === '404') return <PageLoader />;
 
