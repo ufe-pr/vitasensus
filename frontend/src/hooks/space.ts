@@ -130,7 +130,7 @@ export function useRedeemCreationFee(id?: number) {
 	}, [client, id]);
 
 	const redeemFee = useCallback(async () => {
-		if (!id) return;
+		if (!id && id !== 0) return;
 		await client.redeemSpaceCreationFee(id);
 		setCanRedeemFee(false);
 	}, [client, id]);
