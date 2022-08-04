@@ -16,14 +16,6 @@ contract Vitasensus {
 		bytes32 avatar,
 		string description
 	);
-	event SpaceUpdated(
-		uint256 indexed id,
-		bytes32 name,
-		string description,
-		vitetoken token,
-		bytes32 avatar,
-		bytes32 website
-	);
 
 	event JoinedSpace(uint256 indexed spaceId, address indexed user);
 	event LeftSpace(uint256 indexed spaceId, address indexed user);
@@ -131,14 +123,14 @@ contract Vitasensus {
 		_;
 	}
 
-	function _requireNotSpaceMember(uint256 spaceId) private view {
-		require(!isSpaceMember(spaceId, msg.sender));
-	}
+	// function _requireNotSpaceMember(uint256 spaceId) private view {
+	// 	require(!isSpaceMember(spaceId, msg.sender));
+	// }
 
-	modifier requireNotSpaceMember(uint256 spaceId) {
-		_requireNotSpaceMember(spaceId);
-		_;
-	}
+	// modifier requireNotSpaceMember(uint256 spaceId) {
+	// 	_requireNotSpaceMember(spaceId);
+	// 	_;
+	// }
 
 	function _requireProposalActive(uint256 spaceId, uint256 proposalId) private view {
 		require(_isProposalActive(spaceId, proposalId));
@@ -148,9 +140,9 @@ contract Vitasensus {
 		require(isProposalClosed(spaceId, proposalId));
 	}
 
-	function _requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) private view {
-		require(!isProposalExecuted(spaceId, proposalId));
-	}
+	// function _requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) private view {
+	// 	require(!isProposalExecuted(spaceId, proposalId));
+	// }
 
 	function _requireSpaceToken(uint256 spaceId) private view {
 		require(msg.token == _spaces[spaceId].token);
@@ -167,7 +159,7 @@ contract Vitasensus {
 	}
 
 	modifier requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) {
-		_requireProposalNotExecuted(spaceId, proposalId);
+		require(!isProposalExecuted(spaceId, proposalId));
 		_;
 	}
 
@@ -218,7 +210,7 @@ contract Vitasensus {
 	}
 
 	function _getProposal(uint256 spaceId, uint256 proposalId)
-		internal
+		private
 		view
 		returns (Proposal storage)
 	{
@@ -373,13 +365,14 @@ contract Vitasensus {
 		payable(msg.sender).transfer(msg.token, msg.value);
 	}
 
-	function joinSpace(uint256 spaceId) public requireNotSpaceMember(spaceId) {
+	function joinSpace(uint256 spaceId) public {
+		require(!isSpaceMember(spaceId, msg.sender));
 		_spacesMembers[spaceId].set(msg.sender, 1);
 		_userSpaces[msg.sender].set(spaceId, 1);
 	}
 
 	function leaveSpace(uint256 spaceId) external {
-		require(isSpaceMember(spaceId, msg.sender));
+		 _requireSpaceMember(spaceId);
 		_spacesMembers[spaceId].remove(msg.sender);
 		_userSpaces[msg.sender].remove(spaceId);
 	}
@@ -433,8 +426,12 @@ contract Vitasensus {
 		payable(_spacesOwners[spaceId]).transfer(VITE_TOKEN_ID, SPACE_CREATION_FEE);
 	}
 
-	function canRedeemSpaceCreationFee(uint256 spaceId) public view returns (bool) {
-		return _spaces[spaceId].createdTimestamp != 0 && _spaces[spaceId].createdTimestamp + 7776000 < block.timestamp;
+	function canRedeemSpaceCreationFee(uint256 spaceId) internal view returns (bool) {
+		return _spaces[spaceId].createdTimestamp != 0 && _spaces[spaceId].createdTimestamp + 600 /* 7776000 */ < block.timestamp;
+	}
+
+	function getCreationTimestamp(uint256 spaceId) external view returns (uint256) {
+		return _spaces[spaceId].createdTimestamp;
 	}
 
 	// Update a space
@@ -454,14 +451,6 @@ contract Vitasensus {
 		space.tokenDecimals = uint8(spaceTokenDecimals);
 		space.avatar = avatar;
 		space.website = website;
-		emit SpaceUpdated(
-			spaceId,
-			space.name,
-			space.description,
-			space.token,
-			space.avatar,
-			space.website
-		);
 	}
 
 	// Update space create proposal threshold

@@ -64,29 +64,9 @@ const Vitasensus = {
 			type: 'event',
 		},
 		{
-			anonymous: false,
-			inputs: [
-				{ indexed: true, internalType: 'uint256', name: 'id', type: 'uint256' },
-				{ indexed: false, internalType: 'bytes32', name: 'name', type: 'bytes32' },
-				{ indexed: false, internalType: 'string', name: 'description', type: 'string' },
-				{ indexed: false, internalType: 'tokenId', name: 'token', type: 'tokenId' },
-				{ indexed: false, internalType: 'bytes32', name: 'avatar', type: 'bytes32' },
-				{ indexed: false, internalType: 'bytes32', name: 'website', type: 'bytes32' },
-			],
-			name: 'SpaceUpdated',
-			type: 'event',
-		},
-		{
 			inputs: [],
 			name: 'SPACE_CREATION_FEE',
 			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-			stateMutability: 'view',
-			type: 'function',
-		},
-		{
-			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
-			name: 'canRedeemSpaceCreationFee',
-			outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
 			stateMutability: 'view',
 			type: 'function',
 		},
@@ -128,6 +108,13 @@ const Vitasensus = {
 			name: 'executeProposal',
 			outputs: [],
 			stateMutability: 'nonpayable',
+			type: 'function',
+		},
+		{
+			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
+			name: 'getCreationTimestamp',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+			stateMutability: 'view',
 			type: 'function',
 		},
 		{

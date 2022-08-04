@@ -482,11 +482,13 @@ export class SensusClient {
 	}
 
 	async canRedeemSpaceCreationFee(spaceId: number): Promise<boolean> {
-		const result = (await this.queryContract(VitasensusContract, 'canRedeemSpaceCreationFee', [
+		const result = (await this.queryContract(VitasensusContract, 'getCreationTimestamp', [
 			spaceId,
 		])) as any as string[];
 
-		return result[0] === '1';
+		const timestamp = parseInt(result[0]);
+
+		return timestamp + 600 < Date.now() / 1000;
 	}
 
 	async redeemSpaceCreationFee(spaceId: number): Promise<any> {
