@@ -54,16 +54,6 @@ const Vitasensus = {
 		{
 			anonymous: false,
 			inputs: [
-				{ indexed: true, internalType: 'uint256', name: 'proposalId', type: 'uint256' },
-				{ indexed: true, internalType: 'uint256', name: 'spaceId', type: 'uint256' },
-				{ indexed: true, internalType: 'address', name: 'voter', type: 'address' },
-			],
-			name: 'ProposalVoted',
-			type: 'event',
-		},
-		{
-			anonymous: false,
-			inputs: [
 				{ indexed: true, internalType: 'uint256', name: 'id', type: 'uint256' },
 				{ indexed: true, internalType: 'tokenId', name: 'token', type: 'tokenId' },
 				{ indexed: true, internalType: 'bytes32', name: 'name', type: 'bytes32' },
@@ -71,16 +61,6 @@ const Vitasensus = {
 				{ indexed: false, internalType: 'string', name: 'description', type: 'string' },
 			],
 			name: 'SpaceCreated',
-			type: 'event',
-		},
-		{
-			anonymous: false,
-			inputs: [
-				{ indexed: true, internalType: 'uint256', name: 'id', type: 'uint256' },
-				{ indexed: true, internalType: 'address', name: 'from', type: 'address' },
-				{ indexed: true, internalType: 'address', name: 'to', type: 'address' },
-			],
-			name: 'SpaceOwnershipTransferred',
 			type: 'event',
 		},
 		{
@@ -95,6 +75,20 @@ const Vitasensus = {
 			],
 			name: 'SpaceUpdated',
 			type: 'event',
+		},
+		{
+			inputs: [],
+			name: 'SPACE_CREATION_FEE',
+			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+			stateMutability: 'view',
+			type: 'function',
+		},
+		{
+			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
+			name: 'canRedeemSpaceCreationFee',
+			outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+			stateMutability: 'view',
+			type: 'function',
 		},
 		{
 			inputs: [
@@ -123,7 +117,7 @@ const Vitasensus = {
 			],
 			name: 'createSpace',
 			outputs: [],
-			stateMutability: 'nonpayable',
+			stateMutability: 'payable',
 			type: 'function',
 		},
 		{
@@ -155,13 +149,6 @@ const Vitasensus = {
 				{ internalType: 'uint256', name: 'memberCounts', type: 'uint256' },
 				{ internalType: 'uint256', name: 'tokenDecimals', type: 'uint256' },
 			],
-			stateMutability: 'view',
-			type: 'function',
-		},
-		{
-			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
-			name: 'getSpaceMembersCount',
-			outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
 			stateMutability: 'view',
 			type: 'function',
 		},
@@ -371,6 +358,13 @@ const Vitasensus = {
 			type: 'function',
 		},
 		{
+			inputs: [{ internalType: 'uint256', name: 'spaceId', type: 'uint256' }],
+			name: 'redeemSpaceCreationFee',
+			outputs: [],
+			stateMutability: 'nonpayable',
+			type: 'function',
+		},
+		{
 			inputs: [
 				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
 				{ internalType: 'uint256', name: 'proposalId', type: 'uint256' },
@@ -387,16 +381,6 @@ const Vitasensus = {
 				{ internalType: 'address[]', name: 'newAdmins', type: 'address[]' },
 			],
 			name: 'setSpaceAdmins',
-			outputs: [],
-			stateMutability: 'nonpayable',
-			type: 'function',
-		},
-		{
-			inputs: [
-				{ internalType: 'uint256', name: 'spaceId', type: 'uint256' },
-				{ internalType: 'address', name: 'newOwner', type: 'address' },
-			],
-			name: 'transferSpaceOwnership',
 			outputs: [],
 			stateMutability: 'nonpayable',
 			type: 'function',
