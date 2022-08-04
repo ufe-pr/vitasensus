@@ -108,7 +108,7 @@ const SpaceProfile = () => {
 						}}
 					/>
 				)}
-				{!canRedeemFee && (
+				{canRedeemFee && (
 					<Block title="Redeem creation fee">
 						<PrimaryButton disabled={redeemFeeLoading} onClick={doRedeemFee}>
 							{redeemFeeLoading ? (
