@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { SpacesContext } from '../utils/SpacesContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import normalizeUrl from 'normalize-url';
 
 type Props = State & {
 	noPadding?: boolean;
@@ -110,7 +111,11 @@ function SidebarItem({ avatar, label, href, className }: SidebarItemProps) {
 					}
 				>
 					{typeof avatar === 'string' ? (
-						<img className="h-full w-full object-cover" src={avatar} alt={label} />
+						<img
+							className="h-full w-full object-cover"
+							src={avatar && normalizeUrl(avatar)}
+							alt={label}
+						/>
 					) : (
 						avatar
 					)}

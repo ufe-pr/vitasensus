@@ -1,4 +1,5 @@
 import { Space } from '../client/types';
+import normalizeUrl from 'normalize-url';
 
 const SpaceAvatar = ({ space, size }: { space: Space; size?: number | string }) => (
 	<div
@@ -9,7 +10,7 @@ const SpaceAvatar = ({ space, size }: { space: Space; size?: number | string }) 
 			<img
 				onError={(e) => (e.currentTarget.style.display = 'none')}
 				className="object-cover h-full w-full"
-				src={space.avatar}
+				src={space.avatar && normalizeUrl(space.avatar)}
 				alt={`${space.name} logo`}
 			/>
 		)}

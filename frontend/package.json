@@ -17,6 +17,7 @@
 		"@vite/vitejs-ws": "2.3.17-alpha.5",
 		"bignumber.js": "^9.0.2",
 		"buffer": "^6.0.3",
+		"normalize-url": "^7.0.3",
 		"qrcode": "1.5.0",
 		"react": "^18.2.0",
 		"react-datepicker": "^4.8.0",
