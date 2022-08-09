@@ -28,6 +28,8 @@ export const SpacesContextProvider = ({ children }: { children: ReactNode | Reac
 			client.getUserSpaces().then((spaces) => {
 				setUserSpaces(spaces);
 			});
+		} else {
+			setUserSpaces([]);
 		}
 	}, [client]);
 	return (
