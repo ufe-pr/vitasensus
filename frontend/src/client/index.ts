@@ -488,7 +488,7 @@ export class SensusClient {
 
 		const timestamp = parseInt(result[0]);
 
-		return timestamp + 600 < Date.now() / 1000;
+		return timestamp + 7776000 < Date.now() / 1000;
 	}
 
 	async redeemSpaceCreationFee(spaceId: number): Promise<any> {

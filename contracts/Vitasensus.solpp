@@ -123,15 +123,6 @@ contract Vitasensus {
 		_;
 	}
 
-	// function _requireNotSpaceMember(uint256 spaceId) private view {
-	// 	require(!isSpaceMember(spaceId, msg.sender));
-	// }
-
-	// modifier requireNotSpaceMember(uint256 spaceId) {
-	// 	_requireNotSpaceMember(spaceId);
-	// 	_;
-	// }
-
 	function _requireProposalActive(uint256 spaceId, uint256 proposalId) private view {
 		require(_isProposalActive(spaceId, proposalId));
 	}
@@ -139,10 +130,6 @@ contract Vitasensus {
 	function _requireProposalClosed(uint256 spaceId, uint256 proposalId) private view {
 		require(isProposalClosed(spaceId, proposalId));
 	}
-
-	// function _requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) private view {
-	// 	require(!isProposalExecuted(spaceId, proposalId));
-	// }
 
 	function _requireSpaceToken(uint256 spaceId) private view {
 		require(msg.token == _spaces[spaceId].token);
@@ -427,7 +414,7 @@ contract Vitasensus {
 	}
 
 	function canRedeemSpaceCreationFee(uint256 spaceId) internal view returns (bool) {
-		return _spaces[spaceId].createdTimestamp != 0 && _spaces[spaceId].createdTimestamp + 600 /* 7776000 */ < block.timestamp;
+		return _spaces[spaceId].createdTimestamp != 0 && _spaces[spaceId].createdTimestamp + 7776000 < block.timestamp;
 	}
 
 	function getCreationTimestamp(uint256 spaceId) external view returns (uint256) {
@@ -481,24 +468,6 @@ contract Vitasensus {
 	{
 		return _spacesProposalsVoters[spaceId][proposalId].length;
 	}
-
-	// function getSpaceMembers(
-	// 	uint256 spaceId,
-	// 	uint256 skip,
-	// 	uint256 limit
-	// ) public view returns (address[] memory members_) {
-	// 	if (skip < _spacesMembers[spaceId].size()) {
-	// 		uint256 length = (_spaces.length - skip) > limit ? limit : _spaces.length - skip;
-	// 		members_ = new address[](length);
-	// 		for (
-	// 			uint256 index = skip;
-	// 			index < _spacesMembers[spaceId].size() && index < (skip + limit);
-	// 			index++
-	// 		) {
-	// 			members_[index - skip] = (_spacesMembers[spaceId].keys[index]);
-	// 		}
-	// 	}
-	// }
 
 	function getUserSpaces(address user)
 		external

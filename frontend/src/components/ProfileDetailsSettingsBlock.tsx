@@ -127,7 +127,7 @@ export const ProfileDetailsSettingsBlock = ({
 				<div>
 					{!initialValues && (
 						<p className="text-orange-300 mb-2">
-							100,000 VITE will be staked to create a space. Do you wish to continue?
+							100,000 VITE will be staked for 90 days to create a space. Do you wish to continue?
 						</p>
 					)}
 					<PrimaryButton disabled={loading}>
