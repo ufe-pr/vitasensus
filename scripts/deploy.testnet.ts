@@ -19,7 +19,7 @@ async function run(): Promise<void> {
 	console.log(vitasensus.address);
 
 	// stake quota
-	await deployer.stakeForQuota({beneficiaryAddress: vitasensus.address, amount:"2001000000000000000000"});
+	await deployer.stakeForQuota({beneficiaryAddress: vitasensus.address, amount:"3333000000000000000000"});
 
 	return;
 }
