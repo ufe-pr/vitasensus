@@ -16,11 +16,14 @@ async function run(): Promise<void> {
 	vitasensus.setDeployer(deployer).setProvider(provider);
 	await vitasensus.deploy({responseLatency: 1});
 	expect(vitasensus.address).to.be.a('string');
-	console.log(vitasensus.address);
+	console.log("Deploy successful!");
+	console.log("Contract address:", vitasensus.address);
 
 	// stake quota
-	await deployer.stakeForQuota({beneficiaryAddress: vitasensus.address, amount:"3333000000000000000000"});
-
+	await deployer.stakeForQuota({beneficiaryAddress: vitasensus.address, amount:"1000000000000000000000"}).autoSend();
+	console.log("Successfully staked VITE for quota");
+	console.log("VITE staked:", "1000000000000000000000");
+	
 	return;
 }
 

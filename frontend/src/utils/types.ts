@@ -15,6 +15,7 @@ export type State = {
 		tokenId?: string,
 		amount?: string
 	) => Promise<object>;
+	signMessage: (message: string) => Promise<{signature: string; publicKey: string}>;
 	queryContract: (
 		contract: typeof CafeContract,
 		methodName: string,
@@ -26,6 +27,8 @@ export type State = {
 		eventName: string
 	) => Promise<object>;
 	viteApi: ViteAPI;
+	serverViteApi: ViteAPI;
+	serverURL: string;
 	toast: string;
 	languageType: string;
 	networkType: NetworkTypes;

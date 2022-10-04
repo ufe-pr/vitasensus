@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ProfileDetailsSettingsBlock } from '../components/ProfileDetailsSettingsBlock';
+import { ProfileDetailsSettingsBlock } from './ProfileDetailsSettingsBlock';
 import { useClient } from '../hooks/client';
 import { useCurrentSpace, useRedeemCreationFee, useSpaceSettings } from '../hooks/space';
 import { connect } from '../utils/globalContext';
@@ -9,7 +9,7 @@ import { PrimaryButton } from './PrimaryButton';
 import { SpaceAdminSettingsBlock } from './SpaceAdminSettingsBlock';
 import { SpaceThresholdSettingsBlock } from './SpaceThresholdSettingsBlock';
 
-const SpaceProfile = () => {
+const SpaceProfileSettings = () => {
 	const client = useClient();
 	const space = useCurrentSpace();
 	const settings = useSpaceSettings(space?.id);
@@ -126,4 +126,4 @@ const SpaceProfile = () => {
 	);
 };
 
-export default connect(SpaceProfile);
+export default connect(SpaceProfileSettings);

@@ -3,8 +3,9 @@ pragma soliditypp >=0.8.0;
 
 import './IterableMapping.solpp';
 import './VitasensusProposalExecutor.solpp';
+import './Ownable.sol';
 
-contract Vitasensus {
+contract Vitasensus is Ownable {
 	using IterableMapping for IterableMapping.Map;
 	using UintKeyedIterableMapping for UintKeyedIterableMapping.Map;
 
@@ -27,7 +28,8 @@ contract Vitasensus {
 		string title,
 		string description,
 		uint256 startTime,
-		uint256 endTime
+		uint256 endTime,
+		uint256 snapshot
 	);
 	event ProposalExecuted(uint256 indexed proposalId, uint256 indexed spaceId, uint256 choiceId);
 
@@ -61,6 +63,7 @@ contract Vitasensus {
 		string title;
 		uint64 startTime;
 		uint64 endTime;
+		uint256 snapshotHeight;
 		address author;
 		bytes32[] choices;
 		address[] choicesExecutors;
@@ -70,9 +73,8 @@ contract Vitasensus {
 	}
 
 	struct Vote {
-		address voter;
-		uint256[] votes;
-		bool redeemed;
+		uint256 choiceIndex;
+		uint256 votes;
 	}
 
 	// State
@@ -88,6 +90,9 @@ contract Vitasensus {
 
 	mapping(uint256 => mapping(uint256 => mapping(address => Vote))) _spacesProposalsVotes;
 	mapping(uint256 => mapping(uint256 => address[])) _spacesProposalsVoters;
+
+
+	mapping(address => bool) private _isOperator;
 
 	// Modifier declarations
 
@@ -131,10 +136,6 @@ contract Vitasensus {
 		require(isProposalClosed(spaceId, proposalId));
 	}
 
-	function _requireSpaceToken(uint256 spaceId) private view {
-		require(msg.token == _spaces[spaceId].token);
-	}
-
 	modifier requireProposalActive(uint256 spaceId, uint256 proposalId) {
 		_requireProposalActive(spaceId, proposalId);
 		_;
@@ -147,11 +148,6 @@ contract Vitasensus {
 
 	modifier requireProposalNotExecuted(uint256 spaceId, uint256 proposalId) {
 		require(!isProposalExecuted(spaceId, proposalId));
-		_;
-	}
-
-	modifier requireSpaceToken(uint256 spaceId) {
-		_requireSpaceToken(spaceId);
 		_;
 	}
 
@@ -178,6 +174,14 @@ contract Vitasensus {
 		return _spacesOwners[spaceId] == user;
 	}
 
+	function isOperator(address _addr) public view returns (bool) {
+		return _isOperator[_addr];
+	}
+
+	function hasVoted(uint256 spaceId, uint256 proposalId, address user_) public view returns (bool) {
+		return _spacesProposalsVotes[spaceId][proposalId][user_].votes > 0;
+	}
+
 	function _isProposalActive(uint256 spaceId, uint256 proposalId) internal view returns (bool) {
 		return
 			_getProposal(spaceId, proposalId).startTime <= block.timestamp &&
@@ -202,6 +206,14 @@ contract Vitasensus {
 		returns (Proposal storage)
 	{
 		return _spacesProposals[spaceId][proposalId];
+	}
+
+	function addOperator(address operator_) external onlyOwner {
+		_isOperator[operator_] = true;
+	}
+
+	function removeOperator(address operator_) external onlyOwner {
+		_isOperator[operator_] = false;
 	}
 
 	// Proposal execution
@@ -256,47 +268,26 @@ contract Vitasensus {
 	function voteOnProposal(
 		uint256 spaceId,
 		uint256 proposalId,
-		uint256[] memory votes
+		address voter,
+		uint256 choiceIndex,
+		uint256 votes
 	)
 		external
-		payable
-		requireSpaceMember(spaceId)
-		requireSpaceToken(spaceId)
 		requireProposalActive(spaceId, proposalId)
 	{
+		require(isOperator(msg.sender));
+		require(isSpaceMember(spaceId, voter));
+		require(!hasVoted(spaceId, proposalId, voter));
 		Proposal storage proposal = _getProposal(spaceId, proposalId);
-		require(votes.length == proposal.choices.length);
+		require(choiceIndex < proposal.choices.length);
 
-		require(msg.value > 0);
-		require(msg.value == sum(votes) * 10**_spaces[spaceId].tokenDecimals);
-
-		Vote storage vote = _spacesProposalsVotes[spaceId][proposalId][msg.sender];
-		if (vote.votes.length == 0) {
-			_spacesProposalsVoters[spaceId][proposalId].push(msg.sender);
-			vote.voter = msg.sender;
-			vote.votes = new uint256[](votes.length);
-		}
-
-		for (uint256 index = 0; index < votes.length; index++) {
-			vote.votes[index] += votes[index];
-			proposal.votes[index] += votes[index];
-		}
-	}
-
-	function redeemVotedTokens(
-		uint256 spaceId,
-		uint256 proposalId,
-		address voter
-	) external requireProposalClosed(spaceId, proposalId) {
+		_spacesProposalsVoters[spaceId][proposalId].push(voter);
+		
 		Vote storage vote = _spacesProposalsVotes[spaceId][proposalId][voter];
-		require(!vote.redeemed);
-		if (vote.votes.length == 0) {
-			return;
-		}
-		uint256 multiplier = 10**_spaces[spaceId].tokenDecimals;
-		uint256 total = sum(vote.votes) * multiplier;
-		vote.redeemed = true;
-		payable(voter).transfer(_spaces[spaceId].token, total);
+		vote.choiceIndex = choiceIndex;
+		vote.votes = votes;
+		proposal.votes[choiceIndex] += votes;
+		
 	}
 
 	function createProposal(
@@ -305,10 +296,12 @@ contract Vitasensus {
 		string memory description,
 		uint256 startTime,
 		uint256 endTime,
+		uint256 snapshot,
 		bytes32[] memory choices,
 		address[] memory choicesExecutors,
 		bytes32[] memory choicesData
-	) external payable requireSpaceMember(spaceId) requireSpaceToken(spaceId) {
+	) external payable requireSpaceMember(spaceId) {
+		require(_spaces[spaceId].token == msg.token);
 		SpaceSettings storage spaceSettings = _spaceSettings[spaceId];
 		bool isAdmin = isSpaceAdmin(spaceId, msg.sender);
 		if (spaceSettings.onlyAdminsCanCreateProposals) {
@@ -337,6 +330,7 @@ contract Vitasensus {
 		proposal.choicesData = choicesData;
 		proposal.author = msg.sender;
 		proposal.votes = new uint256[](choices.length);
+		proposal.snapshotHeight = snapshot;
 
 		emit ProposalCreated(
 			proposalId,
@@ -345,7 +339,8 @@ contract Vitasensus {
 			proposal.title,
 			proposal.body,
 			proposal.startTime,
-			proposal.endTime
+			proposal.endTime,
+			proposal.snapshotHeight
 		);
 
 		// Refund msg value
@@ -461,7 +456,7 @@ contract Vitasensus {
 		return _spacesProposals[spaceId].length;
 	}
 
-	function getSpaceProposalVotesCount(uint256 spaceId, uint256 proposalId)
+	function getSpaceProposalVotersCount(uint256 spaceId, uint256 proposalId)
 		external
 		view
 		returns (uint256)
@@ -605,6 +600,7 @@ contract Vitasensus {
 			address author,
 			uint256 startTime,
 			uint256 endTime,
+			uint256 snapshot,
 			bytes32[] memory choices,
 			address[] memory choicesExecutors,
 			bytes32[] memory choicesData,
@@ -618,6 +614,7 @@ contract Vitasensus {
 			proposal.author,
 			proposal.startTime,
 			proposal.endTime,
+			proposal.snapshotHeight,
 			proposal.choices,
 			proposal.choicesExecutors,
 			proposal.choicesData,
@@ -631,13 +628,14 @@ contract Vitasensus {
 		uint256 proposalId,
 		uint256 skip,
 		uint256 limit
-	) external view returns (address[] memory voters, uint256[][] memory votes) {
+	) external view returns (address[] memory voters, uint256[] memory votes, uint256[] memory choices) {
 		if (skip < _spacesProposalsVoters[spaceId][proposalId].length) {
 			uint256 length = (_spacesProposalsVoters[spaceId][proposalId].length - skip) > limit
 				? limit
 				: _spacesProposalsVoters[spaceId][proposalId].length - skip;
 			voters = new address[](length);
-			votes = new uint256[][](length);
+			votes = new uint256[](length);
+			choices = new uint256[](length);
 			for (
 				uint256 index = skip;
 				index < _spacesProposalsVoters[spaceId][proposalId].length &&
@@ -647,6 +645,7 @@ contract Vitasensus {
 				address voter = _spacesProposalsVoters[spaceId][proposalId][index];
 				voters[index - skip] = voter;
 				votes[index - skip] = _spacesProposalsVotes[spaceId][proposalId][voter].votes;
+				choices[index - skip] = _spacesProposalsVotes[spaceId][proposalId][voter].choiceIndex;
 			}
 		}
 	}

@@ -51,6 +51,7 @@ const SpaceSidebar = ({ space }: { space: DetailedSpace }) => {
 				<div className="py-4">
 					<SidebarLink to={'/space/' + space.id}>Proposals</SidebarLink>
 					<SidebarLink to={'/space/' + space.id + '/create'}>Create proposal</SidebarLink>
+					<SidebarLink to={'/space/' + space.id + '/about'}>About</SidebarLink>
 					{isAdmin && <SidebarLink to={'/space/' + space.id + '/edit'}>Edit space</SidebarLink>}
 				</div>
 			</div>

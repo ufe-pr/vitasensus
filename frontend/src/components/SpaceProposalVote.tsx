@@ -1,20 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Proposal } from '../client/types';
 import { Block } from './Block';
-import tw from 'tailwind-styled-components';
 import { PrimaryButton } from './PrimaryButton';
 import { useClient } from '../hooks/client';
 import { Loader } from './Loader';
 import { useUserInSpace } from '../hooks/space';
-
-const ChoiceButton = tw.button<{}>`
-	bg-transparent
-	w-10
-	h-12
-	border-x
-	border-x-skin-alt
-	disabled:text-skin-alt
-`;
+import { GlobalContext } from '../utils/globalContext';
 
 export const SpaceProposalVote = ({
 	proposal,
@@ -24,129 +15,99 @@ export const SpaceProposalVote = ({
 	className?: string;
 	onVoteSubmitted: () => void;
 }) => {
-	const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
+	const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
 	const [loading, setLoading] = useState(false);
 	const client = useClient();
 	const inSpace = useUserInSpace(proposal?.spaceId);
 	const [_, rebuild] = useState({});
-	const totalVotes = useMemo(
-		() => selectedChoices.reduce((acc, cur) => acc + cur, 0),
-		[selectedChoices]
-	);
-	const votingPower = useMemo(() => {
-		Object.keys(_);
-		if (!proposal) return 0;
-		const votingPower = client.getVotingPower(proposal?.spaceId);
-		if (votingPower) {
-			return votingPower;
-		}
-		return 0;
-	}, [client, proposal, _]);
+	const [votingPower, setVotingPower] = useState(0);
+	const {
+		// @ts-ignore
+		state: { vcInstance,  },
+	} = useContext(GlobalContext);
 
 	useEffect(() => {
-		if (proposal?.choices.length) {
-			setSelectedChoices(new Array(proposal.choices.length).fill(0));
-		}
-	}, [proposal?.choices.length]);
+		(async () => {
+			Object.keys(_);
+			if (!proposal) return 0;
+			console.log(proposal);
+			
+			const votingPower = await client.getVotingPower(proposal.spaceId, proposal.snapshot);
+			if (votingPower) {
+				return votingPower;
+			}
+			return 0;
+		})().then(setVotingPower);
+	}, [client, proposal, _]);
+	
+	const [hasVoted, setHasVoted] = useState<boolean | null>(null);
+
+	useEffect(() => {
+		(async () => {
+			Object.keys(_);
+			console.log(vcInstance);
+			
+			if (!proposal || !vcInstance) return null;
+			console.log(proposal);
+			
+			const hasVoted = await client.hasUserVoted(proposal.spaceId, proposal.id, vcInstance.accounts[0]);
+			return hasVoted;
+			
+		})().then((e) => setHasVoted(e));
+	}, [client, proposal, _, vcInstance]);
+
+	useEffect(() => {
+		setSelectedChoice(null);
+	}, []);
 
 	useEffect(() => {
 		proposal && client.getSpace(proposal?.spaceId).then(() => rebuild({}));
 	}, [client, proposal]);
 
-	const addVote = useCallback(
+	const selectChoice = useCallback(
 		(choiceIndex: number) => {
-			if (!proposal || totalVotes >= client.getVotingPower(proposal.spaceId)) return;
-			setSelectedChoices([
-				...selectedChoices.slice(0, choiceIndex),
-				selectedChoices[choiceIndex] + 1,
-				...selectedChoices.slice(choiceIndex + 1),
-			]);
+			if (!proposal || 0 >= votingPower || hasVoted) return;
+			setSelectedChoice(choiceIndex);
 		},
-		[client, proposal, selectedChoices, totalVotes]
-	);
-
-	const removeVote = useCallback(
-		(choiceIndex: number) => {
-			const oldCount = selectedChoices[choiceIndex];
-
-			setSelectedChoices([
-				...selectedChoices.slice(0, choiceIndex),
-				oldCount > 0 ? Number(BigInt(oldCount) - BigInt(1)) : 0,
-				...selectedChoices.slice(choiceIndex + 1),
-			]);
-		},
-		[selectedChoices]
-	);
-
-	const setChoiceCount = useCallback(
-		(choiceIndex: number, count: number) => {
-			if (!proposal || totalVotes - selectedChoices[choiceIndex] + count > votingPower) return;
-			setSelectedChoices([
-				...selectedChoices.slice(0, choiceIndex),
-				count > 0 ? count : 0,
-				...selectedChoices.slice(choiceIndex + 1),
-			]);
-		},
-		[proposal, selectedChoices, totalVotes, votingPower]
+		[hasVoted, proposal, votingPower]
 	);
 
 	const submitVote = useCallback(async () => {
-		if (!proposal) {
+		if (!proposal || selectedChoice == null) {
 			return;
 		}
 		setLoading(true);
 		try {
-			await client.vote(proposal.spaceId, proposal.id, selectedChoices);
-			setSelectedChoices(new Array(proposal.choices.length).fill(0));
+			await client.vote(proposal.spaceId, proposal.id, selectedChoice);
+			setSelectedChoice(null);
 			onVoteSubmitted();
 		} catch (e) {
 			console.error(e);
 		}
 		setLoading(false);
-	}, [client, onVoteSubmitted, proposal, selectedChoices]);
+	}, [client, onVoteSubmitted, proposal, selectedChoice]);
 
 	return (
-		<Block
-			loading={!proposal}
-			title="Cast your vote"
-			endTitle={!proposal ? '0' : client.getVotingPower(proposal.spaceId).toFixed(0)}
-		>
+		<Block loading={!proposal} title="Cast your vote" endTitle={hasVoted ? "✔️ Voted" : votingPower.toFixed(0)}>
 			{proposal && (
 				<>
 					<div className="mb-4 md:mb-6 space-y-4 md:space-y-6">
-						{selectedChoices.length &&
+						{proposal.choices.length &&
 							proposal.choices.map((choice, i) => (
 								<div key={i}>
 									<div
 										className={
-											'flex w-full items-center justify-between overflow-hidden border h-12 border-skin-alt bg-transparent rounded-full duration-200 px-5 pr-0 text-lg' +
-											((selectedChoices[i] > 0 && ' !border-skin-text-muted') || '')
+											'flex w-full items-center justify-between overflow-hidden border h-12 border-skin-alt bg-transparent rounded-full duration-200 px-5 text-lg cursor-pointer' +
+											((selectedChoice === i && ' !border-skin-text-muted') || '')
 										}
+										onClick={() => selectChoice(i)}
 									>
-										<div className="truncate pr-3 text-left">{choice}</div>
-										<div className="flex items-center justify-end">
-											<ChoiceButton disabled={!selectedChoices[i]} onClick={() => removeVote(i)}>
-												-
-											</ChoiceButton>
-											<input
-												value={selectedChoices[i].toString()}
-												onChange={(e) => setChoiceCount(i, parseInt(e.target.value))}
-												className="input text-center"
-												style={{ width: '40px', height: '44px' }}
-												placeholder="0"
-												type="number"
-												disabled={loading}
-											/>
-
-											<ChoiceButton disabled={totalVotes >= votingPower} onClick={() => addVote(i)}>
-												+
-											</ChoiceButton>
-										</div>
+										<div className="truncate w-full text-center">{choice}</div>
 									</div>
 								</div>
 							))}
 					</div>
-					<PrimaryButton disabled={loading || !inSpace} className="mx-auto" onClick={submitVote}>
+					<PrimaryButton disabled={loading || !inSpace || hasVoted || votingPower <= 0 || selectedChoice === null} className="mx-auto" onClick={submitVote}>
 						{loading ? (
 							<>
 								<Loader className="h-6 w-6" /> Loading...

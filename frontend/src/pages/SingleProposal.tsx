@@ -21,7 +21,6 @@ import { formatDate } from '../utils/strings';
 const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: DetailedSpace }) => {
 	const startDate = new Date(proposal.start * 1000);
 	const endDate = new Date(proposal.end * 1000);
-	const [redeemTokensLoading, setRedeemTokensLoading] = useState(false);
 	const [executeProposalLoading, setExecuteProposalLoading] = useState(false);
 	const [executedProposal, setExecutedProposal] = useState(true);
 	const client = useClient();
@@ -42,15 +41,6 @@ const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: Detailed
 			.finally(() => setExecuteProposalLoading(false));
 	}, [client, proposal.id, proposal.spaceId]);
 
-	const redeemTokens = useCallback(async () => {
-		setRedeemTokensLoading(true);
-		try {
-			await client.redeemTokens(proposal.spaceId, proposal.id);
-		} finally {
-			setRedeemTokensLoading(false);
-		}
-	}, [client, proposal.id, proposal.spaceId]);
-
 	return (
 		<div className="w-full lg:w-4/12 lg:min-w-[321px] space-y-4 md:space-y-6">
 			<Block title="Information">
@@ -61,17 +51,6 @@ const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: Detailed
 				</div>
 			</Block>
 			<SpaceProposalResults proposal={proposal} space={space} />
-			{proposal.state === ProposalState.closed && (
-				<PrimaryButton className="" disabled={redeemTokensLoading} onClick={redeemTokens}>
-					{redeemTokensLoading ? (
-						<>
-							<Loader /> Loading...
-						</>
-					) : (
-						'Redeem tokens'
-					)}
-				</PrimaryButton>
-			)}
 			{proposal.state === ProposalState.closed && !executedProposal && (
 				<PrimaryButton disabled={executeProposalLoading} onClick={executeProposal}>
 					{executeProposalLoading ? (

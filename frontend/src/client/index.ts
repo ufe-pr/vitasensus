@@ -10,10 +10,10 @@ import {
 } from './types';
 import VitasensusContract from '../contracts/Vitasensus';
 import { decodeBytes32ToString, encodeStringToBytes32 } from '../utils/strings';
-import { ViteBalanceInfo } from '../utils/types';
 import { BigNumber } from 'bignumber.js';
 import { ViteAPI } from '@vite/vitejs/distSrc/viteAPI/type';
 import { getTokenInfo } from '../utils/viteScripts';
+import axios from 'axios';
 
 const ViteTokenId = 'tti_5649544520544f4b454e6e40';
 
@@ -46,9 +46,13 @@ export class SensusClient {
 			methodName: string,
 			params: any[]
 		) => Promise<object[] | Array<object>[]>,
-		private readonly viteBalanceInfo: ViteBalanceInfo,
+		private readonly serverViteApi: ViteAPI,
 		private readonly viteApi: ViteAPI,
-		private readonly address?: string
+		private readonly address?: string,
+		private readonly signMessage?: (
+			message: string
+		) => Promise<{ signature: string; publicKey: string }>,
+		private readonly vitasensusServerURL?: string
 	) {}
 
 	private _cachedSpaces: { [id: number]: DetailedSpace } = {};
@@ -131,6 +135,7 @@ export class SensusClient {
 			author,
 			startTime,
 			endTime,
+			snapshot,
 			choices,
 			choicesExecutors,
 			choicesData,
@@ -158,6 +163,7 @@ export class SensusClient {
 					? ProposalState.closed
 					: ProposalState.active,
 			space: this._cachedSpaces[spaceId],
+			snapshot: Number.parseInt(snapshot as string),
 		});
 
 		await this._cacheProposals(spaceId, [proposal]);
@@ -297,6 +303,9 @@ export class SensusClient {
 
 		const [name, description, token, avatar, website, memberCount, decimals] = result;
 		await this.loadTokenDetails(token);
+		const result2 = (await this.queryContract(VitasensusContract, 'getSpaceOwner', [
+			id,
+		])) as object[] as unknown[] as string[];
 
 		const space: DetailedSpace = {
 			id: id,
@@ -309,6 +318,7 @@ export class SensusClient {
 			isPrivate: false,
 			memberCount: Number.parseInt(memberCount),
 			token: this.getToken(token, decimals),
+			owner: result2[0],
 		};
 		await this._cacheSpaces([space]);
 
@@ -352,15 +362,13 @@ export class SensusClient {
 					limit,
 				])) as Array<string | Array<string>>[];
 
-				const [voters, votess] = result;
+				const [voters, votess, choices] = result;
 				for (let i = 0; i < result[0].length; i++) {
-					const votes_ = !votess.length
-						? []
-						: (votess[i + 1] as Array<string>).map((e) => Number.parseInt(e));
+					const votes_ = Number.parseInt(votess[i] as string);
 					const vote: Vote = {
 						proposal: proposal,
-						amount: votes_.reduce((a, b) => a + b, 0),
-						choices: votes_,
+						amount: votes_,
+						choice: Number.parseInt((choices?.[i] ?? '0') as string),
 						space: spaceId,
 						author: voters[i] as string,
 						id: skip + i,
@@ -380,19 +388,35 @@ export class SensusClient {
 		return votes;
 	}
 
-	getVotingPower(spaceId: number): number {
-		if (!this.viteBalanceInfo) return 0;
+	async getVotingPower(spaceId: number, height: number): Promise<number> {
+		console.log(this.vitasensusServerURL);
 
-		const balances = this.viteBalanceInfo.balance;
-		const tokenId = this._cachedSpaces[spaceId]?.token.id;
+		if (!this.vitasensusServerURL) return 0;
+		console.log('Passed server url');
 
-		if (!balances.balanceInfoMap) return 0;
-
-		const token = balances.balanceInfoMap[tokenId]?.tokenInfo;
+		const { token } = (await this.getSpace(spaceId)) ?? {};
 		if (!token) return 0;
-		const balance = balances.balanceInfoMap[tokenId]?.balance;
-		if (!balance) return 0;
-		return new BigNumber(balance, 10).idiv(Math.pow(10, token.decimals), 10).toNumber();
+		const response = await axios.get(`balance/${height.toFixed(0)}/${token?.id}/${this.address}`, {
+			baseURL: this.vitasensusServerURL,
+		});
+
+		return new BigNumber(response.data.balance ?? '0', 10)
+			.idiv(Math.pow(10, token.decimals), 10)
+			.toNumber();
+	}
+
+	async hasUserVoted(spaceId: number, proposalId: number, user: string): Promise<boolean> {
+		console.log(spaceId, proposalId, user);
+
+		const result = (await this.queryContract(VitasensusContract, 'hasVoted', [
+			spaceId,
+			proposalId,
+			user,
+		])) as object[] as unknown[] as string[];
+
+		console.log(result);
+
+		return result[0] !== '0';
 	}
 
 	async createSpace(
@@ -516,6 +540,7 @@ export class SensusClient {
 		const space = await this.getSpace(spaceId);
 		const spaceSettings = await this.getSpaceSettings(spaceId);
 		const isAdmin = await this.isSpaceAdmin(spaceId);
+		const snapshot = await this.serverViteApi.request('ledger_getSnapshotChainHeight');
 		const result = (await this.callContract(
 			VitasensusContract,
 			'createProposal',
@@ -525,6 +550,7 @@ export class SensusClient {
 				description,
 				start,
 				end,
+				snapshot,
 				choices.map((choice) => encodeStringToBytes32(choice)),
 				actions.map((action) => action.executor),
 				actions.map((action) => action.data.padEnd(64, '0')),
@@ -550,30 +576,25 @@ export class SensusClient {
 		return proposal!;
 	}
 
-	async vote(spaceId: number, proposal: number, choiceAmounts: number[]): Promise<void> {
-		await this.getSpace(spaceId);
-		await this.callContract(
-			VitasensusContract,
-			'voteOnProposal',
-			[spaceId, proposal, choiceAmounts.map((amount) => amount.toString())],
-			this._cachedSpaces[spaceId].token.id,
-			new BigNumber(choiceAmounts.reduce((a, b) => a + b, 0))
-				.multipliedBy(Math.pow(10, this._cachedSpaces[spaceId].token.decimals))
-				.toFixed(0)
+	async vote(spaceId: number, proposal: number, choiceIndex: number): Promise<void> {
+		if (!this.signMessage) throw Error('Cannot sign message');
+		const message = `Sign this message to confirm your vote
+
+Space ID: ${spaceId}
+Proposal ID: ${proposal}
+Choice index: ${choiceIndex}`;
+
+		const { signature, publicKey } = await this.signMessage(message);
+
+		await axios.put(
+			`vote/${spaceId}/${proposal}`,
+			{ signature, publicKey, choiceIndex },
+			{ baseURL: this.vitasensusServerURL }
 		);
 	}
 
 	async joinSpace(spaceId: number): Promise<void> {
 		await this.callContract(VitasensusContract, 'joinSpace', [spaceId]);
-	}
-
-	async redeemTokens(spaceId: number, proposalId: number): Promise<void> {
-		this.address &&
-			(await this.callContract(VitasensusContract, 'redeemVotedTokens', [
-				spaceId,
-				proposalId,
-				this.address,
-			]));
 	}
 
 	async executeProposal(spaceId: number, proposalId: number): Promise<void> {

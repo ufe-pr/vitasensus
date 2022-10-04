@@ -13,6 +13,7 @@ export class Proposal {
 	author: string;
 	spaceId: number;
 	space?: Space;
+	snapshot: number;
 	title: string;
 	description: string;
 	choices: string[];
@@ -42,6 +43,7 @@ export class Proposal {
 		start,
 		end,
 		passActions,
+		snapshot,
 	}: Proposal) {
 		this.id = id;
 		this.author = author;
@@ -53,6 +55,7 @@ export class Proposal {
 		this.start = start;
 		this.end = end;
 		this.passActions = passActions;
+		this.snapshot = snapshot;
 	}
 }
 
@@ -61,7 +64,7 @@ export interface Vote {
 	author: string;
 	space: number;
 	proposal: number;
-	choices: number[];
+	choice: number;
 	amount: number;
 }
 
@@ -86,6 +89,7 @@ export interface DetailedSpace extends Space {
 	admins: string[];
 	description?: string;
 	website?: string;
+	owner?: string;
 }
 
 export interface SpaceSettings {

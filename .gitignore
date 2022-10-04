@@ -106,5 +106,4 @@ dist
 /bin/ledger
 
 scripts/deploy.config*.json
-# scripts/deploy.config.*.json
 !scripts/deploy.config*.example.json

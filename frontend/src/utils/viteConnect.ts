@@ -53,6 +53,19 @@ export class VC extends Connector {
 				.catch((e: Error) => reject(e));
 		});
 	}
+
+	async signMessage(...params: object[]) {
+		return new Promise((resolve, reject) => {
+			
+			this.sendCustomRequest({ method: 'vite_signMessage', params })
+				.then((result: object) => {
+					
+					this.saveSession();
+					resolve(result);
+				})
+				.catch((e: Error) => reject(e));
+		});
+	}
 }
 
 export function getValidVCSession() {

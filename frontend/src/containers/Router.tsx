@@ -19,12 +19,24 @@ import CreateSpace from '../pages/CreateSpace';
 import SpaceCreateProposal from '../components/SpaceCreateProposal';
 import { confirmCallContract, getPastEvents } from '../utils/viteScripts';
 import { SpacesContextProvider } from '../utils/SpacesContext';
-import SpaceProfile from '../components/SpaceProfile';
+import SpaceProfileSettings from '../components/SpaceProfileSettings';
+import SpaceProfileDetails from '../components/SpaceProfileDetails';
 
 const providerWsURLs = {
 	...(PROD ? {} : { localnet: process.env.REACT_APP_LOCAL_NETWORK || 'ws://localhost:23457' }),
 	testnet: process.env.REACT_APP_TEST_NETWORK || 'wss://buidl.vite.net/gvite/ws',
 	mainnet: process.env.REACT_APP_MAIN_NETWORK || 'wss://node.vite.net/gvite/ws', // or 'wss://node-tokyo.vite.net/ws'
+};
+const serverURLs = {
+	...(PROD
+		? {}
+		: { localnet: process.env.REACT_APP_LOCAL_VITASENSUS_SERVER_URL || 'http://localhost:8989' }),
+	testnet:
+		process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL ||
+		'http://ec2-34-198-0-251.compute-1.amazonaws.com',
+	mainnet:
+		process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL ||
+		'http://ec2-34-198-0-251.compute-1.amazonaws.com', // or 'wss://node-tokyo.vite.net/ws'
 };
 const providerTimeout = 60000;
 const providerOptions = { retryTimes: 10, retryInterval: 5000 };
@@ -44,13 +56,42 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 			: new HTTP_RPC(url, providerTimeout, providerOptions);
 	}, [networkType]);
 
+	const serverURL = useMemo(() => {
+		const url =
+			serverURLs[networkType] ||
+			(networkType === 'mainnet' ? serverURLs.mainnet : serverURLs.testnet);
+		return url;
+	}, [networkType]);
+
+	const serverRpc = useMemo(() => {
+		const uri = new URL(serverURL);
+		switch (networkType) {
+			case 'localnet':
+				uri.port = '23456';
+				break;
+			case 'testnet':
+				uri.port = '48132';
+				break;
+		}
+		return uri.protocol.startsWith('ws')
+			? new WS_RPC(uri.toString(), providerTimeout, providerOptions)
+			: new HTTP_RPC(uri.toString(), providerTimeout, providerOptions);
+	}, [networkType, serverURL]);
+
 	const viteApi = useMemo(() => {
 		return new ViteAPI(rpc, () => {
-			// 
+			//
 		});
 	}, [rpc]);
 
-	useEffect(() => setState({ viteApi }), [setState, viteApi]);
+	const serverViteApi = useMemo(() => {
+		return new ViteAPI(serverRpc, () => {});
+	}, [serverRpc]);
+
+	useEffect(
+		() => setState({ viteApi, serverViteApi, serverURL }),
+		[setState, viteApi, serverViteApi, serverURL]
+	);
 
 	const getBalanceInfo = useCallback(
 		(address: string) => {
@@ -74,7 +115,6 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 					setState({ viteBalanceInfo: res });
 				})
 				.catch((e) => {
-					
 					setState({ toast: JSON.stringify(e), vcInstance: null });
 					localStorage.removeItem(VCSessionKey);
 					// Sometimes on page load, this will catch with
@@ -136,6 +176,20 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 		setState({ callContract });
 	}, [setState, callContract]);
 
+	const signMessage = useCallback(
+		async (message: string) => {
+			if (!vcInstance) {
+				return;
+			}
+			return await vcInstance.signMessage({ message: new Buffer(message).toString('base64') });
+		},
+		[vcInstance]
+	);
+
+	useEffect(() => {
+		setState({ signMessage });
+	}, [setState, signMessage]);
+
 	const queryContract = useCallback(
 		async (contract: typeof CafeContract, methodName: string, params: any[] = []) => {
 			if (!viteApi) {
@@ -196,7 +250,6 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 		setState({ scanEvents });
 	}, [setState, scanEvents]);
 
-
 	return (
 		<BrowserRouter>
 			<SpacesContextProvider>
@@ -226,7 +279,15 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 								path="edit"
 								element={
 									<SingleSpace>
-										<SpaceProfile />
+										<SpaceProfileSettings />
+									</SingleSpace>
+								}
+							/>
+							<Route
+								path="about"
+								element={
+									<SingleSpace>
+										<SpaceProfileDetails />
 									</SingleSpace>
 								}
 							/>

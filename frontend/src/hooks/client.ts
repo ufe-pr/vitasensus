@@ -5,7 +5,7 @@ import { GlobalContext } from '../utils/globalContext';
 export function useClient() {
 	const {
 		// @ts-ignore
-		state: { callContract, queryContract, scanEvents, viteBalanceInfo, viteApi, vcInstance },
+		state: { callContract, queryContract, scanEvents, viteApi, serverViteApi, serverURL, vcInstance, signMessage },
 	} = useContext(GlobalContext);
 	const client = useMemo(
 		() =>
@@ -13,11 +13,13 @@ export function useClient() {
 				callContract,
 				scanEvents,
 				queryContract,
-				viteBalanceInfo,
+				serverViteApi,
 				viteApi,
-				vcInstance?.accounts[0]
+				vcInstance?.accounts[0],
+				signMessage,
+				serverURL,
 			),
-		[callContract, scanEvents, queryContract, viteBalanceInfo, viteApi, vcInstance?.accounts]
+		[callContract, scanEvents, queryContract, serverViteApi, viteApi, serverURL, vcInstance?.accounts, signMessage]
 	);
 
 	return client;
