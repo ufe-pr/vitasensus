@@ -48,6 +48,7 @@ const RightSidebar = ({ proposal, space }: { proposal: Proposal; space: Detailed
 					<SidebarTile label="Voting System" value="Weighted voting" />
 					<SidebarTile label="Start date" value={formatDate(startDate) ?? ''} />
 					<SidebarTile label="End date" value={formatDate(endDate) ?? ''} />
+					<SidebarTile label="Snapshot" value={proposal.snapshot.toFixed(0) ?? ''} />
 				</div>
 			</Block>
 			<SpaceProposalResults proposal={proposal} space={space} />

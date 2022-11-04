@@ -32,11 +32,22 @@ const serverURLs = {
 		? {}
 		: { localnet: process.env.REACT_APP_LOCAL_VITASENSUS_SERVER_URL || 'http://localhost:8989' }),
 	testnet:
-		process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL ||
-		'http://ec2-34-198-0-251.compute-1.amazonaws.com',
+		// process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL ||
+		'/operator-buidl/',
 	mainnet:
-		process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL ||
-		'http://ec2-34-198-0-251.compute-1.amazonaws.com', // or 'wss://node-tokyo.vite.net/ws'
+		// process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL ||
+		'/operator/', // or 'wss://node-tokyo.vite.net/ws'
+};
+const gviteServerURLs = {
+	...(PROD
+		? {}
+		: { localnet: process.env.REACT_APP_LOCAL_VITASENSUS_SERVER_URL || 'http://localhost:23456' }),
+	testnet:
+		// process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL_GVITE ||
+		'/gvite-buidl/',
+	mainnet:
+		// process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL_GVITE ||
+		'/gvite/', // or 'wss://node-tokyo.vite.net/ws'
 };
 const providerTimeout = 60000;
 const providerOptions = { retryTimes: 10, retryInterval: 5000 };
@@ -64,19 +75,11 @@ const Router = ({ setState, vcInstance, networkType, viteBalanceInfo }: Props) =
 	}, [networkType]);
 
 	const serverRpc = useMemo(() => {
-		const uri = new URL(serverURL);
-		switch (networkType) {
-			case 'localnet':
-				uri.port = '23456';
-				break;
-			case 'testnet':
-				uri.port = '48132';
-				break;
-		}
-		return uri.protocol.startsWith('ws')
-			? new WS_RPC(uri.toString(), providerTimeout, providerOptions)
-			: new HTTP_RPC(uri.toString(), providerTimeout, providerOptions);
-	}, [networkType, serverURL]);
+		const url =
+		gviteServerURLs[networkType] ||
+		(networkType === 'mainnet' ? gviteServerURLs.mainnet : gviteServerURLs.testnet);
+		return new HTTP_RPC(url, providerTimeout, providerOptions);
+	}, [networkType]);
 
 	const viteApi = useMemo(() => {
 		return new ViteAPI(rpc, () => {

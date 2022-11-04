@@ -1,12 +1,20 @@
 {
     "rewrites": [
         {
-            "source": "/operator-buidl/:match*",
-            "destination": "http://ec2-34-198-0-251.compute-1.amazonaws.com/:match*"
+            "source": "/operator-buidl/:match*(\/*)",
+            "destination": "http://ec2-34-198-0-251.compute-1.amazonaws.com/:match*/"
         },
         {
-            "source": "/operator/:match*",
-            "destination": "http://ec2-34-198-0-251.compute-1.amazonaws.com/:match*"
+            "source": "/operator/:match*(\/*)",
+            "destination": "http://ec2-34-198-0-251.compute-1.amazonaws.com/:match*/"
+        },
+        {
+            "source": "/gvite-buidl/:match*(\/*)",
+            "destination": "http://ec2-34-198-0-251.compute-1.amazonaws.com:48132/:match*/"
+        },
+        {
+            "source": "/gvite/:match*(\/*)",
+            "destination": "http://ec2-34-198-0-251.compute-1.amazonaws.com:48132/:match*/"
         }
     ]
 }
