@@ -23,7 +23,7 @@ export const SpaceProposalVote = ({
 	const [votingPower, setVotingPower] = useState(0);
 	const {
 		// @ts-ignore
-		state: { vcInstance,  },
+		state: { vcInstance },
 	} = useContext(GlobalContext);
 
 	useEffect(() => {
@@ -31,7 +31,7 @@ export const SpaceProposalVote = ({
 			Object.keys(_);
 			if (!proposal) return 0;
 			console.log(proposal);
-			
+
 			const votingPower = await client.getVotingPower(proposal.spaceId, proposal.snapshot);
 			if (votingPower) {
 				return votingPower;
@@ -39,20 +39,23 @@ export const SpaceProposalVote = ({
 			return 0;
 		})().then(setVotingPower);
 	}, [client, proposal, _]);
-	
+
 	const [hasVoted, setHasVoted] = useState<boolean | null>(null);
 
 	useEffect(() => {
 		(async () => {
 			Object.keys(_);
 			console.log(vcInstance);
-			
+
 			if (!proposal || !vcInstance) return null;
 			console.log(proposal);
-			
-			const hasVoted = await client.hasUserVoted(proposal.spaceId, proposal.id, vcInstance.accounts[0]);
+
+			const hasVoted = await client.hasUserVoted(
+				proposal.spaceId,
+				proposal.id,
+				vcInstance.accounts[0]
+			);
 			return hasVoted;
-			
 		})().then((e) => setHasVoted(e));
 	}, [client, proposal, _, vcInstance]);
 
@@ -88,7 +91,11 @@ export const SpaceProposalVote = ({
 	}, [client, onVoteSubmitted, proposal, selectedChoice]);
 
 	return (
-		<Block loading={!proposal} title="Cast your vote" endTitle={hasVoted ? "✔️ Voted" : votingPower.toFixed(0)}>
+		<Block
+			loading={!proposal}
+			title="Cast your vote"
+			endTitle={hasVoted ? '✔️ Voted' : votingPower.toFixed(0)}
+		>
 			{proposal && (
 				<>
 					<div className="mb-4 md:mb-6 space-y-4 md:space-y-6">
@@ -107,7 +114,13 @@ export const SpaceProposalVote = ({
 								</div>
 							))}
 					</div>
-					<PrimaryButton disabled={loading || !inSpace || hasVoted || votingPower <= 0 || selectedChoice === null} className="mx-auto" onClick={submitVote}>
+					<PrimaryButton
+						disabled={
+							loading || !inSpace || hasVoted || votingPower <= 0 || selectedChoice === null
+						}
+						className="mx-auto"
+						onClick={submitVote}
+					>
 						{loading ? (
 							<>
 								<Loader className="h-6 w-6" /> Loading...
@@ -116,6 +129,13 @@ export const SpaceProposalVote = ({
 							'Vote'
 						)}
 					</PrimaryButton>
+					{!inSpace && (
+						<div className="text-red-400">
+							<p>
+								You're not a member of this space. You need to be a member to vote on proposals.
+							</p>
+						</div>
+					)}
 				</>
 			)}
 		</Block>
