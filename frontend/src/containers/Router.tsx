@@ -32,10 +32,10 @@ const serverURLs = {
 		? {}
 		: { localnet: process.env.REACT_APP_LOCAL_VITASENSUS_SERVER_URL || 'http://localhost:8989' }),
 	testnet:
-		// process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL ||
+		process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL ||
 		'/operator-buidl/',
 	mainnet:
-		// process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL ||
+		process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL ||
 		'/operator/', // or 'wss://node-tokyo.vite.net/ws'
 };
 const gviteServerURLs = {
@@ -43,10 +43,10 @@ const gviteServerURLs = {
 		? {}
 		: { localnet: process.env.REACT_APP_LOCAL_VITASENSUS_SERVER_URL || 'http://localhost:23456' }),
 	testnet:
-		// process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL_GVITE ||
+		process.env.REACT_APP_TESTNET_VITASENSUS_SERVER_URL_GVITE ||
 		'/gvite-buidl/',
 	mainnet:
-		// process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL_GVITE ||
+		process.env.REACT_APP_MAINNET_VITASENSUS_SERVER_URL_GVITE ||
 		'/gvite/', // or 'wss://node-tokyo.vite.net/ws'
 };
 const providerTimeout = 60000;
